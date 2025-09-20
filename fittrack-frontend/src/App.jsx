@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
+import ProfilePage from "./pages/ProfilePage";
 import { Toaster } from "react-hot-toast";
 
 const AppContent = () => {
@@ -51,6 +52,16 @@ const AppContent = () => {
                 element={
                     isAuthenticated ? (
                         <DashboardPage />
+                    ) : (
+                        <Navigate to="/login" replace />
+                    )
+                }
+            />
+            <Route
+                path="/profile"
+                element={
+                    isAuthenticated ? (
+                        <ProfilePage />
                     ) : (
                         <Navigate to="/login" replace />
                     )
