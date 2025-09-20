@@ -55,6 +55,26 @@ const Header = () => {
                             Dashboard
                         </Link>
                         <Link
+                            to="/history"
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                location.pathname === "/history"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "text-gray-600 hover:text-blue-700 hover:bg-blue-50"
+                            }`}
+                        >
+                            History
+                        </Link>
+                        <Link
+                            to="/analytics"
+                            className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                                location.pathname === "/analytics"
+                                    ? "bg-blue-100 text-blue-700"
+                                    : "text-gray-600 hover:text-blue-700 hover:bg-blue-50"
+                            }`}
+                        >
+                            Analytics
+                        </Link>
+                        <Link
                             to="/profile"
                             className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                                 location.pathname === "/profile"

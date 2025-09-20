@@ -50,4 +50,66 @@ export const healthAPI = {
     check: () => api.get("/health"),
 };
 
+// Food tracking API
+export const foodAPI = {
+    // Get today's food entry
+    getToday: () => api.get("/api/food/today"),
+
+    // Get food entry for specific date
+    getByDate: (date) => api.get(`/api/food/date/${date}`),
+
+    // Get food history
+    getHistory: (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return api.get(
+            `/api/food/history${queryString ? `?${queryString}` : ""}`
+        );
+    },
+
+    // Add food item
+    addFood: (foodData) => api.post("/api/food/add", foodData),
+
+    // Remove food item
+    removeFood: (entryId) => api.delete(`/api/food/remove/${entryId}`),
+
+    // Update water intake (add/subtract)
+    updateWater: (amount) => api.post("/api/food/water", { amount }),
+
+    // Set water intake (absolute value)
+    setWater: (amount) => api.put("/api/food/water/set", { amount }),
+
+    // Get analytics
+    getAnalytics: (days = 7) => api.get(`/api/food/analytics?days=${days}`),
+};
+
+// Custom Foods API
+export const customFoodAPI = {
+    // Get user's custom foods
+    getCustomFoods: (params = {}) => {
+        const queryString = new URLSearchParams(params).toString();
+        return api.get(
+            `/api/custom-foods${queryString ? `?${queryString}` : ""}`
+        );
+    },
+
+    // Get specific custom food
+    getCustomFood: (id) => api.get(`/api/custom-foods/${id}`),
+
+    // Create new custom food
+    createCustomFood: (foodData) => api.post("/api/custom-foods", foodData),
+
+    // Update custom food
+    updateCustomFood: (id, foodData) =>
+        api.put(`/api/custom-foods/${id}`, foodData),
+
+    // Delete custom food
+    deleteCustomFood: (id) => api.delete(`/api/custom-foods/${id}`),
+
+    // Increment usage count
+    useCustomFood: (id) => api.post(`/api/custom-foods/${id}/use`),
+
+    // Get categories
+    getCategories: () => api.get("/api/custom-foods/categories/list"),
+};
+
 export default api;

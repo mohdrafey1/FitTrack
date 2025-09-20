@@ -9,6 +9,8 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import DashboardPage from "./pages/DashboardPage";
 import ProfilePage from "./pages/ProfilePage";
+import FoodHistory from "./pages/FoodHistory";
+import Analytics from "./pages/Analytics";
 import { Toaster } from "react-hot-toast";
 
 const AppContent = () => {
@@ -62,6 +64,26 @@ const AppContent = () => {
                 element={
                     isAuthenticated ? (
                         <ProfilePage />
+                    ) : (
+                        <Navigate to="/login" replace />
+                    )
+                }
+            />
+            <Route
+                path="/history"
+                element={
+                    isAuthenticated ? (
+                        <FoodHistory />
+                    ) : (
+                        <Navigate to="/login" replace />
+                    )
+                }
+            />
+            <Route
+                path="/analytics"
+                element={
+                    isAuthenticated ? (
+                        <Analytics />
                     ) : (
                         <Navigate to="/login" replace />
                     )
