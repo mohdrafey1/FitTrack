@@ -1,11 +1,14 @@
 import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 const Header = () => {
     const { user, logout } = useAuth();
+    const navigate = useNavigate();
 
     const handleLogout = () => {
         logout();
+        navigate("/login");
         toast.success("Logged out successfully!");
     };
 
