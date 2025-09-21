@@ -62,13 +62,6 @@ const Analytics = () => {
         return "text-red-600 bg-red-50";
     };
 
-    const getProgressColor = (percentage) => {
-        if (percentage >= 100) return "from-emerald-500 to-green-500";
-        if (percentage >= 75) return "from-amber-400 to-orange-500";
-        if (percentage >= 50) return "from-orange-400 to-red-400";
-        return "from-red-400 to-pink-500";
-    };
-
     const StatCard = ({
         title,
         value,
@@ -135,9 +128,54 @@ const Analytics = () => {
     };
 
     const TrendChart = ({ data, title, dataKey, unit, icon: Icon }) => {
-        const maxValue = Math.max(...data.map((item) => item[dataKey]));
-        const minValue = Math.min(...data.map((item) => item[dataKey]));
-        const range = maxValue - minValue || 1;
+        // Debug: Log the data being passed
+        console.log(`TrendChart ${title}:`, { data, dataKey, unit });
+
+        // Ensure we have data
+        if (!data || data.length === 0) {
+            return (
+                <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-3 md:p-4">
+                    <div className="flex items-center justify-between mb-3 md:mb-4">
+                        <h3 className="text-sm md:text-base font-semibold text-gray-900 flex items-center space-x-2">
+                            {Icon && <Icon className="w-4 h-4 text-gray-600" />}
+                            <span>{title}</span>
+                        </h3>
+                        <TrendingUp className="w-4 h-4 text-gray-400" />
+                    </div>
+                    <div className="relative h-32 md:h-48 flex items-center justify-center">
+                        <span className="text-gray-400 text-sm">
+                            No data available
+                        </span>
+                    </div>
+                </div>
+            );
+        }
+
+        const chartData = data.slice(-7); // Last 7 entries for mobile
+        const values = chartData.map((item) => item[dataKey] || 0);
+        const maxValue = Math.max(...values);
+        const minValue = Math.min(...values);
+
+        console.log(`${title} values:`, { values, maxValue, minValue });
+
+        // Better range calculation - ensure minimum range for better visualization
+        const range = maxValue - minValue || Math.max(maxValue * 0.1, 1);
+
+        // Dynamic color based on dataKey
+        const getChartColor = (dataKey) => {
+            switch (dataKey) {
+                case "calories":
+                    return "from-orange-400 to-red-500";
+                case "protein":
+                    return "from-red-400 to-pink-500";
+                case "water":
+                    return "from-blue-400 to-cyan-500";
+                case "foodCount":
+                    return "from-green-400 to-emerald-500";
+                default:
+                    return "from-indigo-400 to-purple-500";
+            }
+        };
 
         return (
             <div className="bg-white/80 backdrop-blur-sm rounded-xl shadow-sm border border-gray-100 p-3 md:p-4">
@@ -149,28 +187,48 @@ const Analytics = () => {
                     <TrendingUp className="w-4 h-4 text-gray-400" />
                 </div>
                 <div className="relative h-32 md:h-48">
-                    <div className="absolute inset-0 flex items-end justify-between">
-                        {data.slice(-7).map((item, index) => {
-                            const height =
-                                ((item[dataKey] - minValue) / range) * 100;
+                    <div className="absolute inset-0 flex items-end justify-between px-2">
+                        {chartData.map((item, index) => {
+                            const value = item[dataKey] || 0;
+                            // Better height calculation with minimum height
+                            let height;
+                            if (maxValue === minValue) {
+                                height = 70; // Show 50% height when all values are the same
+                            } else {
+                                height = ((value - minValue) / range) * 85 + 20; // 10-95% range
+                            }
+
+                            console.log(`${title} bar ${index}:`, {
+                                value,
+                                height,
+                            });
+
                             return (
                                 <div
                                     key={index}
                                     className="flex flex-col items-center flex-1 px-0.5 md:px-1"
                                 >
                                     <div
-                                        className={`bg-gradient-to-t ${getProgressColor(
-                                            75
-                                        )} rounded-t transition-all duration-500 ease-out mb-1 md:mb-2 relative group cursor-pointer`}
+                                        className={`bg-gradient-to-t ${getChartColor(
+                                            dataKey
+                                        )} rounded-t-lg transition-all duration-700 ease-out mb-1 md:mb-2 relative group cursor-pointer shadow-sm hover:shadow-md`}
                                         style={{
-                                            height: `${Math.max(height, 8)}%`,
-                                            width: "70%",
+                                            height: `${Math.max(height, 12)}%`,
+                                            width: "75%",
+                                            minHeight: "8px",
                                         }}
                                     >
                                         {/* Tooltip */}
-                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-1.5 py-1 bg-gray-800 text-white text-xs rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10">
-                                            {item[dataKey]}
-                                            {unit}
+                                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-1 px-2 py-1 bg-gray-900 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-10 shadow-lg">
+                                            <div className="text-center">
+                                                <div className="font-semibold">
+                                                    {value.toLocaleString()}
+                                                    {unit}
+                                                </div>
+                                                <div className="text-gray-300 text-xs">
+                                                    {formatDateUTC(item.date)}
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <span className="text-xs text-gray-500 transform -rotate-45 origin-top-left truncate max-w-6">
@@ -182,12 +240,16 @@ const Analytics = () => {
                     </div>
 
                     {/* Y-axis labels */}
-                    <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400">
-                        <span>{Math.round(maxValue)}</span>
-                        <span className="hidden md:block">
+                    <div className="absolute left-0 top-0 h-full flex flex-col justify-between text-xs text-gray-400 pr-1">
+                        <span className="bg-white/80 px-1 rounded">
+                            {Math.round(maxValue)}
+                        </span>
+                        <span className="hidden md:block bg-white/80 px-1 rounded">
                             {Math.round((maxValue + minValue) / 2)}
                         </span>
-                        <span>{Math.round(minValue)}</span>
+                        <span className="bg-white/80 px-1 rounded">
+                            {Math.round(minValue)}
+                        </span>
                     </div>
                 </div>
             </div>
@@ -458,14 +520,14 @@ const Analytics = () => {
                         {/* Trend Charts */}
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
                             <TrendChart
-                                data={analytics.entries.slice(-7)} // Last 7 entries for mobile
+                                data={analytics.entries}
                                 title="Calories"
                                 dataKey="calories"
                                 unit="cal"
                                 icon={Flame}
                             />
                             <TrendChart
-                                data={analytics.entries.slice(-7)}
+                                data={analytics.entries}
                                 title="Protein"
                                 dataKey="protein"
                                 unit="g"
@@ -475,14 +537,14 @@ const Analytics = () => {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 mb-4 md:mb-6">
                             <TrendChart
-                                data={analytics.entries.slice(-7)}
+                                data={analytics.entries}
                                 title="Water Intake"
                                 dataKey="water"
                                 unit="ml"
                                 icon={Droplets}
                             />
                             <TrendChart
-                                data={analytics.entries.slice(-7)}
+                                data={analytics.entries}
                                 title="Food Items"
                                 dataKey="foodCount"
                                 unit=" items"
