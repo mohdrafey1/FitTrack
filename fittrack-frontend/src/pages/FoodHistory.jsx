@@ -12,23 +12,35 @@ import {
     Beef,
     Droplets,
     UtensilsCrossed,
-    TrendingUp,
     AlertTriangle,
-    X,
-    CheckCircle,
     ArrowLeft,
     BarChart3,
 } from "lucide-react";
+
+function getLocalDateString(date = new Date()) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
+
+function formatDateForBackend(dateString) {
+    const date = new Date(dateString);
+    // Get year, month, day in local time
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+}
 
 const FoodHistory = () => {
     const { user } = useAuth();
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [selectedDate, setSelectedDate] = useState(
-        new Date().toISOString().split("T")[0]
-    );
+
+    const [selectedDate, setSelectedDate] = useState(getLocalDateString());
     const [selectedEntry, setSelectedEntry] = useState(null);
-    const [dateRange, setDateRange] = useState("7");
+    const [dateRange, setDateRange] = useState("3");
     const [searchTerm, setSearchTerm] = useState("");
     const [showDeleteModal, setShowDeleteModal] = useState(false);
     const [foodToDelete, setFoodToDelete] = useState(null);
@@ -42,7 +54,18 @@ const FoodHistory = () => {
                     limit: parseInt(dateRange),
                 });
                 if (response.data.success) {
-                    setEntries(response.data.data);
+                    const uniqueEntries = [];
+                    const datesSet = new Set();
+
+                    response.data.data.forEach((entry) => {
+                        const dateStr = entry.date.split("T")[0];
+                        if (!datesSet.has(dateStr)) {
+                            datesSet.add(dateStr);
+                            uniqueEntries.push(entry);
+                        }
+                    });
+
+                    setEntries(uniqueEntries);
                 }
             } catch (error) {
                 console.error("Error fetching history:", error);
@@ -81,20 +104,12 @@ const FoodHistory = () => {
             )
         );
     };
-
     function formatDate(dateString) {
         const date = new Date(dateString);
-
-        // Uses UTC getters to avoid timezone shift
-        const options = {
+        return date.toLocaleDateString("en-GB", {
             weekday: "short",
             day: "2-digit",
             month: "short",
-        };
-
-        return date.toLocaleDateString("en-GB", {
-            ...options,
-            timeZone: "UTC",
         });
     }
 
@@ -150,6 +165,8 @@ const FoodHistory = () => {
         setShowDeleteModal(false);
         setFoodToDelete(null);
     };
+
+    console.log(selectedDate);
 
     return (
         <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
@@ -248,12 +265,16 @@ const FoodHistory = () => {
                                                 key={entry._id}
                                                 onClick={() =>
                                                     setSelectedDate(
-                                                        entry.date.split("T")[0]
+                                                        formatDateForBackend(
+                                                            entry.date
+                                                        )
                                                     )
                                                 }
                                                 className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${
                                                     selectedDate ===
-                                                    entry.date.split("T")[0]
+                                                    formatDateForBackend(
+                                                        entry.date
+                                                    )
                                                         ? "border-indigo-500 bg-indigo-50 shadow-md"
                                                         : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
                                                 }`}
@@ -345,7 +366,7 @@ const FoodHistory = () => {
                                     onChange={(e) =>
                                         setSelectedDate(e.target.value)
                                     }
-                                    max={new Date().toISOString().split("T")[0]}
+                                    max={getLocalDateString()}
                                     className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                                 />
                             </div>
@@ -406,8 +427,7 @@ const FoodHistory = () => {
 
                         {/* Water Tracker - Only show for today or if user wants to update past entries */}
                         {selectedEntry &&
-                            selectedDate ===
-                                new Date().toISOString().split("T")[0] && (
+                            selectedDate === getLocalDateString() && (
                                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6 mb-6">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
                                         <Droplets className="w-5 h-5 text-blue-600" />
@@ -531,9 +551,7 @@ const FoodHistory = () => {
                                                     </div>
 
                                                     {selectedDate ===
-                                                        new Date()
-                                                            .toISOString()
-                                                            .split("T")[0] && (
+                                                        getLocalDateString() && (
                                                         <button
                                                             onClick={() =>
                                                                 handleDeleteClick(
