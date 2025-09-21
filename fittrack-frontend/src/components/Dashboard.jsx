@@ -206,20 +206,6 @@ const Dashboard = () => {
 
             {/* Main Content */}
             <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 md:py-8">
-                {/* Welcome Section */}
-                <div className="mb-6 md:mb-8">
-                    <div className="flex items-center space-x-2 md:space-x-3 mb-2">
-                        <Calendar className="w-5 h-5 md:w-6 md:h-6 text-indigo-600" />
-                        <h2 className="text-xl md:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-                            Welcome back, {user?.name || "User"}!
-                        </h2>
-                    </div>
-                    <p className="text-sm md:text-base text-gray-600 ml-7 md:ml-9">
-                        Ready to crush your fitness goals today? Let's track
-                        your progress.
-                    </p>
-                </div>
-
                 {/* Today's Progress */}
                 <div className="mb-6 md:mb-8">
                     <h3 className="text-lg md:text-xl font-semibold text-gray-900 mb-4 md:mb-6 flex items-center space-x-2">
