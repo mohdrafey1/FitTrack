@@ -4,28 +4,33 @@ const { authenticateToken } = require("../middleware/auth");
 
 const router = express.Router();
 
+/**
+ * ✅ Helper: Normalize any date to UTC midnight (00:00:00 UTC)
+ */
+function normalizeToUTC(date) {
+    const d = new Date(date);
+    return new Date(
+        Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate())
+    );
+}
+
 // @route   GET /api/food/today
 // @desc    Get today's food entry for the authenticated user
 // @access  Private
 router.get("/today", authenticateToken, async (req, res) => {
     try {
-        const today = new Date();
-        const entry = await FoodEntry.getOrCreateEntry(req.user.id, today);
+        const todayUTC = normalizeToUTC(new Date());
+
+        const entry = await FoodEntry.getOrCreateEntry(req.user.id, todayUTC);
         await entry.populate(
             "user",
             "firstName lastName targetDailyCalories targetDailyProteins targetDailyWater"
         );
 
-        res.json({
-            success: true,
-            data: entry,
-        });
+        res.json({ success: true, data: entry });
     } catch (error) {
         console.error("Error fetching today's entry:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
@@ -35,14 +40,12 @@ router.get("/today", authenticateToken, async (req, res) => {
 router.get("/date/:date", authenticateToken, async (req, res) => {
     try {
         const { date } = req.params;
+        const requestedDate = normalizeToUTC(date);
 
-        // Validate date format
-        const requestedDate = new Date(date);
         if (isNaN(requestedDate.getTime())) {
-            return res.status(400).json({
-                success: false,
-                message: "Invalid date format",
-            });
+            return res
+                .status(400)
+                .json({ success: false, message: "Invalid date format" });
         }
 
         const entry = await FoodEntry.getOrCreateEntry(
@@ -54,43 +57,26 @@ router.get("/date/:date", authenticateToken, async (req, res) => {
             "firstName lastName targetDailyCalories targetDailyProteins targetDailyWater"
         );
 
-        res.json({
-            success: true,
-            data: entry,
-        });
+        res.json({ success: true, data: entry });
     } catch (error) {
         console.error("Error fetching entry for date:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
 // @route   GET /api/food/history
-// @desc    Get food entries for a date range (default: last 7 days)
-// @access  Private
 router.get("/history", authenticateToken, async (req, res) => {
     try {
         const { startDate, endDate, limit = 7 } = req.query;
-
         let start, end;
 
         if (startDate && endDate) {
-            start = new Date(startDate);
-            end = new Date(endDate);
-
-            if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Invalid date format",
-                });
-            }
+            start = normalizeToUTC(startDate);
+            end = normalizeToUTC(endDate);
         } else {
-            // Default to last 7 days
-            end = new Date();
-            start = new Date();
-            start.setDate(start.getDate() - (parseInt(limit) - 1));
+            end = normalizeToUTC(new Date());
+            start = new Date(end);
+            start.setUTCDate(start.getUTCDate() - (parseInt(limit) - 1));
         }
 
         const entries = await FoodEntry.getEntriesInRange(
@@ -106,18 +92,11 @@ router.get("/history", authenticateToken, async (req, res) => {
         res.json({
             success: true,
             data: entries,
-            meta: {
-                startDate: start,
-                endDate: end,
-                count: entries.length,
-            },
+            meta: { startDate: start, endDate: end, count: entries.length },
         });
     } catch (error) {
         console.error("Error fetching food history:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
@@ -138,7 +117,6 @@ router.post("/add", authenticateToken, async (req, res) => {
             servingSize,
         } = req.body;
 
-        // Validation
         if (
             !foodId ||
             !foodName ||
@@ -148,10 +126,9 @@ router.post("/add", authenticateToken, async (req, res) => {
             carbs === undefined ||
             fat === undefined
         ) {
-            return res.status(400).json({
-                success: false,
-                message: "Missing required fields",
-            });
+            return res
+                .status(400)
+                .json({ success: false, message: "Missing required fields" });
         }
 
         if (quantity <= 0) {
@@ -161,8 +138,8 @@ router.post("/add", authenticateToken, async (req, res) => {
             });
         }
 
-        const today = new Date();
-        const entry = await FoodEntry.getOrCreateEntry(req.user.id, today);
+        const todayUTC = normalizeToUTC(new Date());
+        const entry = await FoodEntry.getOrCreateEntry(req.user.id, todayUTC);
 
         const foodData = {
             foodId: parseInt(foodId),
@@ -174,7 +151,7 @@ router.post("/add", authenticateToken, async (req, res) => {
             carbs: parseFloat(carbs),
             fat: parseFloat(fat),
             servingSize,
-            timestamp: new Date(),
+            timestamp: new Date(), // keep timestamp exact
         };
 
         await entry.addFood(foodData);
@@ -190,10 +167,7 @@ router.post("/add", authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error("Error adding food:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
@@ -203,16 +177,15 @@ router.post("/add", authenticateToken, async (req, res) => {
 router.delete("/remove/:entryId", authenticateToken, async (req, res) => {
     try {
         const { entryId } = req.params;
-        const today = new Date();
+        const todayUTC = normalizeToUTC(new Date());
 
-        const entry = await FoodEntry.getOrCreateEntry(req.user.id, today);
-
+        const entry = await FoodEntry.getOrCreateEntry(req.user.id, todayUTC);
         const foodEntry = entry.foods.id(entryId);
+
         if (!foodEntry) {
-            return res.status(404).json({
-                success: false,
-                message: "Food entry not found",
-            });
+            return res
+                .status(404)
+                .json({ success: false, message: "Food entry not found" });
         }
 
         await entry.removeFood(entryId);
@@ -228,10 +201,7 @@ router.delete("/remove/:entryId", authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error("Error removing food:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
@@ -250,7 +220,6 @@ router.post("/water", authenticateToken, async (req, res) => {
         }
 
         const waterAmount = parseFloat(amount);
-
         if (waterAmount === 0) {
             return res.status(400).json({
                 success: false,
@@ -258,8 +227,8 @@ router.post("/water", authenticateToken, async (req, res) => {
             });
         }
 
-        const today = new Date();
-        const entry = await FoodEntry.getOrCreateEntry(req.user.id, today);
+        const todayUTC = normalizeToUTC(new Date());
+        const entry = await FoodEntry.getOrCreateEntry(req.user.id, todayUTC);
 
         await entry.updateWater(waterAmount);
         await entry.populate(
@@ -276,10 +245,7 @@ router.post("/water", authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error("Error updating water intake:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
@@ -299,8 +265,8 @@ router.put("/water/set", authenticateToken, async (req, res) => {
 
         const waterAmount = Math.max(0, parseFloat(amount));
 
-        const today = new Date();
-        const entry = await FoodEntry.getOrCreateEntry(req.user.id, today);
+        const todayUTC = normalizeToUTC(new Date());
+        const entry = await FoodEntry.getOrCreateEntry(req.user.id, todayUTC);
 
         entry.water = waterAmount;
         await entry.save();
@@ -316,10 +282,7 @@ router.put("/water/set", authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error("Error setting water intake:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 
@@ -329,11 +292,11 @@ router.put("/water/set", authenticateToken, async (req, res) => {
 router.get("/analytics", authenticateToken, async (req, res) => {
     try {
         const { days = 7 } = req.query;
-        const numDays = Math.min(parseInt(days), 30); // Max 30 days
+        const numDays = Math.min(parseInt(days), 30);
 
-        const endDate = new Date();
-        const startDate = new Date();
-        startDate.setDate(startDate.getDate() - (numDays - 1));
+        const endDate = normalizeToUTC(new Date());
+        const startDate = new Date(endDate);
+        startDate.setUTCDate(startDate.getUTCDate() - (numDays - 1));
 
         const entries = await FoodEntry.getEntriesInRange(
             req.user.id,
@@ -381,11 +344,7 @@ router.get("/analytics", authenticateToken, async (req, res) => {
         res.json({
             success: true,
             data: {
-                period: {
-                    days: numDays,
-                    startDate,
-                    endDate,
-                },
+                period: { days: numDays, startDate, endDate },
                 summary: {
                     totalEntries,
                     avgCalories,
@@ -409,10 +368,7 @@ router.get("/analytics", authenticateToken, async (req, res) => {
                           }
                         : null,
                     water: bestWaterDay
-                        ? {
-                              date: bestWaterDay.date,
-                              value: bestWaterDay.water,
-                          }
+                        ? { date: bestWaterDay.date, value: bestWaterDay.water }
                         : null,
                 },
                 entries: entries.map((entry) => ({
@@ -428,10 +384,7 @@ router.get("/analytics", authenticateToken, async (req, res) => {
         });
     } catch (error) {
         console.error("Error fetching analytics:", error.message);
-        res.status(500).json({
-            success: false,
-            message: "Server error",
-        });
+        res.status(500).json({ success: false, message: "Server error" });
     }
 });
 

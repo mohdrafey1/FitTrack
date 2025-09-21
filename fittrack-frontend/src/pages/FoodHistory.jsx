@@ -17,20 +17,38 @@ import {
     BarChart3,
 } from "lucide-react";
 
-function getLocalDateString(date = new Date()) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
+// --- Date Utils ---
+function getUTCDateString(date = new Date()) {
+    // Always return YYYY-MM-DD in UTC
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+    const day = String(date.getUTCDate()).padStart(2, "0");
     return `${year}-${month}-${day}`;
 }
 
 function formatDateForBackend(dateString) {
-    const date = new Date(dateString);
-    // Get year, month, day in local time
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
+    // Input: YYYY-MM-DD (UTC)
+    // Output: YYYY-MM-DD (same, no shift)
+    return dateString;
+}
+
+function formatDateForDisplay(dateString) {
+    // Convert UTC date string to local readable date
+    const date = new Date(dateString + "T00:00:00Z"); // force UTC midnight
+    return date.toLocaleDateString("en-GB", {
+        weekday: "short",
+        day: "2-digit",
+        month: "short",
+        timeZone: "UTC",
+    });
+}
+
+function formatTimeForDisplay(timestamp) {
+    if (!timestamp) return "No time recorded";
+    return new Date(timestamp).toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+    });
 }
 
 const FoodHistory = () => {
@@ -38,7 +56,7 @@ const FoodHistory = () => {
     const [entries, setEntries] = useState([]);
     const [loading, setLoading] = useState(true);
 
-    const [selectedDate, setSelectedDate] = useState(getLocalDateString());
+    const [selectedDate, setSelectedDate] = useState(getUTCDateString());
     const [selectedEntry, setSelectedEntry] = useState(null);
     const [dateRange, setDateRange] = useState("3");
     const [searchTerm, setSearchTerm] = useState("");
@@ -104,14 +122,6 @@ const FoodHistory = () => {
             )
         );
     };
-    function formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString("en-GB", {
-            weekday: "short",
-            day: "2-digit",
-            month: "short",
-        });
-    }
 
     const getProgressPercentage = (consumed, target) => {
         if (!target) return 0;
@@ -266,14 +276,16 @@ const FoodHistory = () => {
                                                 onClick={() =>
                                                     setSelectedDate(
                                                         formatDateForBackend(
-                                                            entry.date
+                                                            entry.date.split(
+                                                                "T"
+                                                            )[0]
                                                         )
                                                     )
                                                 }
                                                 className={`w-full text-left p-3 md:p-4 rounded-xl border-2 transition-all duration-200 hover:shadow-md ${
                                                     selectedDate ===
                                                     formatDateForBackend(
-                                                        entry.date
+                                                        entry.date.split("T")[0]
                                                     )
                                                         ? "border-indigo-500 bg-indigo-50 shadow-md"
                                                         : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
@@ -281,7 +293,11 @@ const FoodHistory = () => {
                                             >
                                                 <div className="flex justify-between items-center mb-2 md:mb-3">
                                                     <span className="font-semibold text-gray-900 text-sm md:text-base">
-                                                        {formatDate(entry.date)}
+                                                        {formatDateForDisplay(
+                                                            entry.date.split(
+                                                                "T"
+                                                            )[0]
+                                                        )}
                                                     </span>
                                                     <div className="flex items-center space-x-1 text-xs text-gray-500">
                                                         <UtensilsCrossed className="w-3 h-3" />
@@ -358,7 +374,7 @@ const FoodHistory = () => {
                         <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6 mb-6">
                             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 md:mb-6 space-y-3 sm:space-y-0">
                                 <h3 className="text-lg font-semibold text-gray-900">
-                                    {formatDate(selectedDate + "T00:00:00")}
+                                    {formatDateForDisplay(selectedDate)}
                                 </h3>
                                 <input
                                     type="date"
@@ -366,7 +382,7 @@ const FoodHistory = () => {
                                     onChange={(e) =>
                                         setSelectedDate(e.target.value)
                                     }
-                                    max={getLocalDateString()}
+                                    max={getUTCDateString()}
                                     className="px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
                                 />
                             </div>
@@ -427,7 +443,7 @@ const FoodHistory = () => {
 
                         {/* Water Tracker - Only show for today or if user wants to update past entries */}
                         {selectedEntry &&
-                            selectedDate === getLocalDateString() && (
+                            selectedDate === getUTCDateString() && (
                                 <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-gray-100 p-4 md:p-6 mb-6">
                                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center space-x-2">
                                         <Droplets className="w-5 h-5 text-blue-600" />
@@ -493,17 +509,9 @@ const FoodHistory = () => {
                                                         <div className="flex items-center space-x-2 mb-2 text-xs md:text-sm text-gray-600">
                                                             <Clock className="w-3 h-3 md:w-4 md:h-4" />
                                                             <span>
-                                                                {food.timestamp
-                                                                    ? new Date(
-                                                                          food.timestamp
-                                                                      ).toLocaleTimeString(
-                                                                          [],
-                                                                          {
-                                                                              hour: "2-digit",
-                                                                              minute: "2-digit",
-                                                                          }
-                                                                      )
-                                                                    : "No time recorded"}
+                                                                {formatTimeForDisplay(
+                                                                    food.timestamp
+                                                                )}
                                                             </span>
                                                             <span className="text-gray-400">
                                                                 •
@@ -551,7 +559,7 @@ const FoodHistory = () => {
                                                     </div>
 
                                                     {selectedDate ===
-                                                        getLocalDateString() && (
+                                                        getUTCDateString() && (
                                                         <button
                                                             onClick={() =>
                                                                 handleDeleteClick(

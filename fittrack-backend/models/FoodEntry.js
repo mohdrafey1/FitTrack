@@ -11,22 +11,21 @@ const foodEntrySchema = new mongoose.Schema(
             type: Date,
             required: true,
             default: () => {
-                // Set to start of day in user's timezone
-                const today = new Date();
-                today.setHours(0, 0, 0, 0);
-                return today;
+                // Always use UTC midnight
+                const now = new Date();
+                return new Date(
+                    Date.UTC(
+                        now.getUTCFullYear(),
+                        now.getUTCMonth(),
+                        now.getUTCDate()
+                    )
+                );
             },
         },
         foods: [
             {
-                foodId: {
-                    type: Number,
-                    required: true,
-                },
-                foodName: {
-                    type: String,
-                    required: true,
-                },
+                foodId: { type: Number, required: true },
+                foodName: { type: String, required: true },
                 quantity: {
                     type: Number,
                     required: true,
@@ -38,65 +37,24 @@ const foodEntrySchema = new mongoose.Schema(
                     enum: ["g", "ml"],
                     default: "g",
                 },
-                calories: {
-                    type: Number,
-                    required: true,
-                    min: 0,
-                },
-                protein: {
-                    type: Number,
-                    required: true,
-                    min: 0,
-                },
-                carbs: {
-                    type: Number,
-                    required: true,
-                    min: 0,
-                },
-                fat: {
-                    type: Number,
-                    required: true,
-                    min: 0,
-                },
-                servingSize: {
-                    type: String, // e.g., "Medium bowl", "1 apple"
-                },
+                calories: { type: Number, required: true, min: 0 },
+                protein: { type: Number, required: true, min: 0 },
+                carbs: { type: Number, required: true, min: 0 },
+                fat: { type: Number, required: true, min: 0 },
+                servingSize: { type: String },
                 timestamp: {
                     type: Date,
-                    default: Date.now,
+                    default: Date.now, // Keep as UTC automatically
                 },
             },
         ],
-        water: {
-            type: Number,
-            default: 0,
-            min: [0, "Water intake cannot be negative"],
-            max: [10000, "Water intake seems too high"],
-        },
-        totalCalories: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
-        totalProtein: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
-        totalCarbs: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
-        totalFat: {
-            type: Number,
-            default: 0,
-            min: 0,
-        },
+        water: { type: Number, default: 0, min: 0, max: 10000 },
+        totalCalories: { type: Number, default: 0, min: 0 },
+        totalProtein: { type: Number, default: 0, min: 0 },
+        totalCarbs: { type: Number, default: 0, min: 0 },
+        totalFat: { type: Number, default: 0, min: 0 },
     },
-    {
-        timestamps: true,
-    }
+    { timestamps: true }
 );
 
 // Compound index for user and date for efficient queries
@@ -129,7 +87,6 @@ foodEntrySchema.pre("save", function (next) {
     }
     next();
 });
-
 // Instance method to add a food entry
 foodEntrySchema.methods.addFood = function (foodData) {
     this.foods.push(foodData);
@@ -148,48 +105,52 @@ foodEntrySchema.methods.updateWater = function (waterAmount) {
     return this.save();
 };
 
-// Static method to get or create entry for a specific date
+// Static methods
 foodEntrySchema.statics.getOrCreateEntry = async function (userId, date) {
-    const startOfDay = new Date(date);
-    startOfDay.setHours(0, 0, 0, 0);
+    const utcMidnight = new Date(
+        Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate())
+    );
 
-    let entry = await this.findOne({
-        user: userId,
-        date: startOfDay,
-    });
-
+    let entry = await this.findOne({ user: userId, date: utcMidnight });
     if (!entry) {
         entry = new this({
             user: userId,
-            date: startOfDay,
+            date: utcMidnight,
             foods: [],
             water: 0,
         });
         await entry.save();
     }
-
     return entry;
 };
 
-// Static method to get entries for a date range
 foodEntrySchema.statics.getEntriesInRange = async function (
     userId,
     startDate,
     endDate
 ) {
-    const start = new Date(startDate);
-    start.setHours(0, 0, 0, 0);
+    const start = new Date(
+        Date.UTC(
+            startDate.getUTCFullYear(),
+            startDate.getUTCMonth(),
+            startDate.getUTCDate()
+        )
+    );
+    const end = new Date(
+        Date.UTC(
+            endDate.getUTCFullYear(),
+            endDate.getUTCMonth(),
+            endDate.getUTCDate(),
+            23,
+            59,
+            59,
+            999
+        )
+    );
 
-    const end = new Date(endDate);
-    end.setHours(23, 59, 59, 999);
-
-    return this.find({
-        user: userId,
-        date: {
-            $gte: start,
-            $lte: end,
-        },
-    }).sort({ date: -1 });
+    return this.find({ user: userId, date: { $gte: start, $lte: end } }).sort({
+        date: -1,
+    });
 };
 
 // Virtual for progress calculation
