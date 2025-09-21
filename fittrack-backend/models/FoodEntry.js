@@ -138,7 +138,7 @@ foodEntrySchema.methods.addFood = function (foodData) {
 
 // Instance method to remove a food entry
 foodEntrySchema.methods.removeFood = function (foodEntryId) {
-    this.foods.id(foodEntryId).remove();
+    this.foods.pull({ _id: foodEntryId });
     return this.save();
 };
 
