@@ -223,25 +223,25 @@ const ProfilePage = () => {
                 <div className="absolute -bottom-40 -left-32 w-80 h-80 bg-gradient-to-tr from-indigo-400/10 to-blue-600/10 rounded-full blur-3xl"></div>
             </div>
 
-            <div className="relative z-10 max-w-4xl mx-auto px-4 py-8">
+            <div className="relative z-10 max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
                 {/* Header Section */}
-                <div className="mb-8">
+                <div className="mb-4 sm:mb-8">
                     <div className="flex items-center justify-between">
                         <div>
-                            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
+                            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-700 bg-clip-text text-transparent">
                                 My Profile
                             </h1>
-                            <p className="text-gray-600 mt-2">
+                            <p className="text-xs sm:text-sm lg:text-base text-gray-600 mt-1 sm:mt-2">
                                 Manage your account and fitness information
                             </p>
                         </div>
                         {!isEditing && (
                             <button
                                 onClick={() => setIsEditing(true)}
-                                className="flex items-center space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-6 py-3 rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                                className="flex items-center space-x-1 sm:space-x-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 lg:py-3 rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
                             >
                                 <svg
-                                    className="w-5 h-5"
+                                    className="w-4 h-4 sm:w-5 sm:h-5"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -261,11 +261,14 @@ const ProfilePage = () => {
 
                 {isEditing ? (
                     /* Edit Mode */
-                    <form onSubmit={handleSubmit} className="space-y-8">
+                    <form
+                        onSubmit={handleSubmit}
+                        className="space-y-4 sm:space-y-6 lg:space-y-8"
+                    >
                         {errors.general && (
-                            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl flex items-center space-x-2">
+                            <div className="bg-red-50 border border-red-200 text-red-700 px-3 sm:px-4 py-2 sm:py-3 rounded-lg sm:rounded-xl flex items-center space-x-2 text-sm">
                                 <svg
-                                    className="w-5 h-5 text-red-500"
+                                    className="w-4 h-4 sm:w-5 sm:h-5 text-red-500 flex-shrink-0"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -277,15 +280,17 @@ const ProfilePage = () => {
                                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                                     />
                                 </svg>
-                                <span>{errors.general}</span>
+                                <span className="text-xs sm:text-sm">
+                                    {errors.general}
+                                </span>
                             </div>
                         )}
 
                         {/* Account Information */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center space-x-2">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 lg:p-8">
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center space-x-2">
                                 <svg
-                                    className="w-6 h-6 text-blue-600"
+                                    className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -297,14 +302,16 @@ const ProfilePage = () => {
                                         d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
                                     />
                                 </svg>
-                                <span>Account Information</span>
+                                <span className="text-sm sm:text-base lg:text-lg">
+                                    Account Information
+                                </span>
                             </h2>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="username"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Username
                                     </label>
@@ -314,7 +321,7 @@ const ProfilePage = () => {
                                         name="username"
                                         value={formData.username}
                                         onChange={handleChange}
-                                        className={`block w-full px-4 py-3 border rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                                        className={`block w-full px-3 py-2 sm:px-4 sm:py-3 border rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                                             errors.username
                                                 ? "border-red-300 ring-2 ring-red-200"
                                                 : "border-gray-200"
@@ -322,7 +329,7 @@ const ProfilePage = () => {
                                         placeholder="Your username"
                                     />
                                     {errors.username && (
-                                        <p className="text-red-500 text-sm">
+                                        <p className="text-red-500 text-xs sm:text-sm">
                                             {errors.username}
                                         </p>
                                     )}
@@ -331,7 +338,7 @@ const ProfilePage = () => {
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="email"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Email Address
                                     </label>
@@ -341,7 +348,7 @@ const ProfilePage = () => {
                                         name="email"
                                         value={formData.email}
                                         onChange={handleChange}
-                                        className={`block w-full px-4 py-3 border rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                                        className={`block w-full px-3 py-2 sm:px-4 sm:py-3 border rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                                             errors.email
                                                 ? "border-red-300 ring-2 ring-red-200"
                                                 : "border-gray-200"
@@ -358,10 +365,10 @@ const ProfilePage = () => {
                         </div>
 
                         {/* Personal Information */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center space-x-2">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 lg:p-8">
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center space-x-2">
                                 <svg
-                                    className="w-6 h-6 text-green-600"
+                                    className="w-5 h-5 sm:w-6 sm:h-6 text-green-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -373,14 +380,16 @@ const ProfilePage = () => {
                                         d="M5.121 17.804A13.937 13.937 0 0112 16c2.5 0 4.847.655 6.879 1.804M15 10a3 3 0 11-6 0 3 3 0 016 0zm6 2a9 9 0 11-18 0 9 9 0 0118 0z"
                                     />
                                 </svg>
-                                <span>Personal Information</span>
+                                <span className="text-sm sm:text-base lg:text-lg">
+                                    Personal Information
+                                </span>
                             </h2>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="age"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Age
                                     </label>
@@ -390,7 +399,7 @@ const ProfilePage = () => {
                                         name="age"
                                         value={formData.age}
                                         onChange={handleChange}
-                                        className={`block w-full px-4 py-3 border rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                                        className={`block w-full px-3 py-2 sm:px-4 sm:py-3 border rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                                             errors.age
                                                 ? "border-red-300 ring-2 ring-red-200"
                                                 : "border-gray-200"
@@ -398,7 +407,7 @@ const ProfilePage = () => {
                                         placeholder="25"
                                     />
                                     {errors.age && (
-                                        <p className="text-red-500 text-sm">
+                                        <p className="text-red-500 text-xs sm:text-sm">
                                             {errors.age}
                                         </p>
                                     )}
@@ -407,7 +416,7 @@ const ProfilePage = () => {
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="height"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Height (cm)
                                     </label>
@@ -417,7 +426,7 @@ const ProfilePage = () => {
                                         name="height"
                                         value={formData.height}
                                         onChange={handleChange}
-                                        className={`block w-full px-4 py-3 border rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 ${
+                                        className={`block w-full px-3 py-2 sm:px-4 sm:py-3 border rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                                             errors.height
                                                 ? "border-red-300 ring-2 ring-red-200"
                                                 : "border-gray-200"
@@ -425,7 +434,7 @@ const ProfilePage = () => {
                                         placeholder="170"
                                     />
                                     {errors.height && (
-                                        <p className="text-red-500 text-sm">
+                                        <p className="text-red-500 text-xs sm:text-sm">
                                             {errors.height}
                                         </p>
                                     )}
@@ -434,7 +443,7 @@ const ProfilePage = () => {
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="gender"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Gender
                                     </label>
@@ -443,7 +452,7 @@ const ProfilePage = () => {
                                         name="gender"
                                         value={formData.gender}
                                         onChange={handleChange}
-                                        className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200"
+                                        className="block w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                     >
                                         <option value="male">Male</option>
                                         <option value="female">Female</option>
@@ -454,10 +463,10 @@ const ProfilePage = () => {
                         </div>
 
                         {/* Fitness Goals */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center space-x-2">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 lg:p-8">
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center space-x-2">
                                 <svg
-                                    className="w-6 h-6 text-purple-600"
+                                    className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -469,14 +478,16 @@ const ProfilePage = () => {
                                         d="M13 10V3L4 14h7v7l9-11h-7z"
                                     />
                                 </svg>
-                                <span>Fitness Goals</span>
+                                <span className="text-sm sm:text-base lg:text-lg">
+                                    Fitness Goals
+                                </span>
                             </h2>
 
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="currentWeight"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Current Weight (kg)
                                     </label>
@@ -486,7 +497,7 @@ const ProfilePage = () => {
                                         name="currentWeight"
                                         value={formData.currentWeight}
                                         onChange={handleChange}
-                                        className={`block w-full px-4 py-3 border rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                                        className={`block w-full px-3 py-2 sm:px-4 sm:py-3 border rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                                             errors.currentWeight
                                                 ? "border-red-300 ring-2 ring-red-200"
                                                 : "border-gray-200"
@@ -495,7 +506,7 @@ const ProfilePage = () => {
                                         step="0.1"
                                     />
                                     {errors.currentWeight && (
-                                        <p className="text-red-500 text-sm">
+                                        <p className="text-red-500 text-xs sm:text-sm">
                                             {errors.currentWeight}
                                         </p>
                                     )}
@@ -504,7 +515,7 @@ const ProfilePage = () => {
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="targetWeight"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Target Weight (kg)
                                     </label>
@@ -514,7 +525,7 @@ const ProfilePage = () => {
                                         name="targetWeight"
                                         value={formData.targetWeight}
                                         onChange={handleChange}
-                                        className={`block w-full px-4 py-3 border rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 ${
+                                        className={`block w-full px-3 py-2 sm:px-4 sm:py-3 border rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base ${
                                             errors.targetWeight
                                                 ? "border-red-300 ring-2 ring-red-200"
                                                 : "border-gray-200"
@@ -523,16 +534,16 @@ const ProfilePage = () => {
                                         step="0.1"
                                     />
                                     {errors.targetWeight && (
-                                        <p className="text-red-500 text-sm">
+                                        <p className="text-red-500 text-xs sm:text-sm">
                                             {errors.targetWeight}
                                         </p>
                                     )}
                                 </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-1 sm:col-span-2 lg:col-span-1">
                                     <label
                                         htmlFor="fitnessGoal"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Fitness Goal
                                     </label>
@@ -541,7 +552,7 @@ const ProfilePage = () => {
                                         name="fitnessGoal"
                                         value={formData.fitnessGoal}
                                         onChange={handleChange}
-                                        className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                        className="block w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                     >
                                         <option value="weight_loss">
                                             Weight Loss
@@ -567,7 +578,7 @@ const ProfilePage = () => {
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="activityLevel"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Activity Level
                                     </label>
@@ -576,7 +587,7 @@ const ProfilePage = () => {
                                         name="activityLevel"
                                         value={formData.activityLevel}
                                         onChange={handleChange}
-                                        className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
+                                        className="block w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                     >
                                         <option value="sedentary">
                                             Sedentary
@@ -599,10 +610,10 @@ const ProfilePage = () => {
                         </div>
 
                         {/* Daily Targets */}
-                        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-8">
-                            <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center space-x-2">
+                        <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-6 lg:p-8">
+                            <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6 flex items-center space-x-2">
                                 <svg
-                                    className="w-6 h-6 text-orange-600"
+                                    className="w-5 h-5 sm:w-6 sm:h-6 text-orange-600"
                                     fill="none"
                                     stroke="currentColor"
                                     viewBox="0 0 24 24"
@@ -614,14 +625,16 @@ const ProfilePage = () => {
                                         d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
                                     />
                                 </svg>
-                                <span>Daily Targets</span>
+                                <span className="text-sm sm:text-base lg:text-lg">
+                                    Daily Targets
+                                </span>
                             </h2>
 
-                            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                            <div className="grid grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="targetDailyCalories"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Daily Calories
                                     </label>
@@ -631,7 +644,7 @@ const ProfilePage = () => {
                                         name="targetDailyCalories"
                                         value={formData.targetDailyCalories}
                                         onChange={handleChange}
-                                        className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                                        className="block w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                         placeholder="2000"
                                     />
                                 </div>
@@ -639,7 +652,7 @@ const ProfilePage = () => {
                                 <div className="space-y-1">
                                     <label
                                         htmlFor="targetDailyProteins"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Daily Protein (g)
                                     </label>
@@ -649,15 +662,15 @@ const ProfilePage = () => {
                                         name="targetDailyProteins"
                                         value={formData.targetDailyProteins}
                                         onChange={handleChange}
-                                        className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                                        className="block w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                         placeholder="150"
                                     />
                                 </div>
 
-                                <div className="space-y-1">
+                                <div className="space-y-1 sm:col-span-2 lg:col-span-1">
                                     <label
                                         htmlFor="targetDailyWater"
-                                        className="block text-sm font-semibold text-gray-700"
+                                        className="block text-xs sm:text-sm font-semibold text-gray-700"
                                     >
                                         Daily Water (ml)
                                     </label>
@@ -667,7 +680,7 @@ const ProfilePage = () => {
                                         name="targetDailyWater"
                                         value={formData.targetDailyWater}
                                         onChange={handleChange}
-                                        className="block w-full px-4 py-3 border border-gray-200 rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200"
+                                        className="block w-full px-3 py-2 sm:px-4 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl bg-gray-50/50 focus:bg-white focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all duration-200 text-sm sm:text-base"
                                         placeholder="2000"
                                     />
                                 </div>
@@ -675,22 +688,22 @@ const ProfilePage = () => {
                         </div>
 
                         {/* Action Buttons */}
-                        <div className="flex justify-end space-x-4">
+                        <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-3 lg:space-x-4">
                             <button
                                 type="button"
                                 onClick={handleCancel}
-                                className="px-6 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                                className="px-4 py-2 sm:px-5 sm:py-2.5 lg:px-6 lg:py-3 border border-gray-300 text-gray-700 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-colors duration-200 text-sm sm:text-base"
                             >
                                 Cancel
                             </button>
                             <button
                                 type="submit"
                                 disabled={isLoading}
-                                className="px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center space-x-2"
+                                className="px-6 py-2 sm:px-7 sm:py-2.5 lg:px-8 lg:py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 transform hover:scale-105 shadow-lg flex items-center justify-center space-x-2 text-sm sm:text-base"
                             >
                                 {isLoading && (
                                     <svg
-                                        className="animate-spin -ml-1 mr-3 h-5 w-5 text-white"
+                                        className="animate-spin -ml-1 mr-2 sm:mr-3 h-4 w-4 sm:h-5 sm:w-5 text-white"
                                         xmlns="http://www.w3.org/2000/svg"
                                         fill="none"
                                         viewBox="0 0 24 24"
@@ -718,15 +731,15 @@ const ProfilePage = () => {
                     </form>
                 ) : (
                     /* View Mode */
-                    <div className="space-y-8">
+                    <div className="space-y-4 sm:space-y-6 lg:space-y-8">
                         {/* Profile Summary Cards */}
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:gap-6">
                             {/* BMI Card */}
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+                            <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-5 lg:p-6">
                                 <div className="text-center">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                                         <svg
-                                            className="w-8 h-8 text-white"
+                                            className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -739,10 +752,12 @@ const ProfilePage = () => {
                                             />
                                         </svg>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-gray-800">
+                                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">
                                         {bmi}
                                     </h3>
-                                    <p className="text-sm text-gray-600">BMI</p>
+                                    <p className="text-xs sm:text-sm text-gray-600">
+                                        BMI
+                                    </p>
                                     <p className="text-xs text-blue-600 font-medium mt-1">
                                         {bmiCategory}
                                     </p>
@@ -750,11 +765,11 @@ const ProfilePage = () => {
                             </div>
 
                             {/* Weight Progress Card */}
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+                            <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-5 lg:p-6">
                                 <div className="text-center">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                                         <svg
-                                            className="w-8 h-8 text-white"
+                                            className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -767,12 +782,12 @@ const ProfilePage = () => {
                                             />
                                         </svg>
                                     </div>
-                                    <h3 className="text-2xl font-bold text-gray-800">
+                                    <h3 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-800">
                                         {weightProgress
                                             ? `${weightProgress.difference} kg`
                                             : "N/A"}
                                     </h3>
-                                    <p className="text-sm text-gray-600">
+                                    <p className="text-xs sm:text-sm text-gray-600">
                                         To {weightProgress?.type || "goal"}
                                     </p>
                                     <p className="text-xs text-green-600 font-medium mt-1">
@@ -783,11 +798,11 @@ const ProfilePage = () => {
                             </div>
 
                             {/* Activity Level Card */}
-                            <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 p-6">
+                            <div className="bg-white/80 backdrop-blur-sm rounded-xl sm:rounded-2xl shadow-xl border border-white/20 p-4 sm:p-5 lg:p-6 sm:col-span-2 lg:col-span-1">
                                 <div className="text-center">
-                                    <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-gradient-to-br from-purple-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
                                         <svg
-                                            className="w-8 h-8 text-white"
+                                            className="w-6 h-6 sm:w-7 sm:h-7 lg:w-8 lg:h-8 text-white"
                                             fill="none"
                                             stroke="currentColor"
                                             viewBox="0 0 24 24"
@@ -800,7 +815,7 @@ const ProfilePage = () => {
                                             />
                                         </svg>
                                     </div>
-                                    <h3 className="text-lg font-bold text-gray-800 capitalize">
+                                    <h3 className="text-base font-bold text-gray-800 capitalize">
                                         {user?.activityLevel?.replace(
                                             "_",
                                             " "
@@ -838,44 +853,44 @@ const ProfilePage = () => {
                                     <span>Personal Information</span>
                                 </h2>
 
-                                <div className="space-y-4">
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">
+                                <div className="space-y-3 sm:space-y-4">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs sm:text-sm text-gray-600">
                                             Username:
                                         </span>
-                                        <span className="font-medium text-gray-800">
+                                        <span className="font-medium text-gray-800 text-xs sm:text-sm lg:text-base">
                                             {user?.username || "N/A"}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs sm:text-sm text-gray-600">
                                             Email:
                                         </span>
-                                        <span className="font-medium text-gray-800">
+                                        <span className="font-medium text-gray-800 text-xs sm:text-sm lg:text-base">
                                             {user?.email || "N/A"}
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs sm:text-sm text-gray-600">
                                             Age:
                                         </span>
-                                        <span className="font-medium text-gray-800">
+                                        <span className="font-medium text-gray-800 text-xs sm:text-sm lg:text-base">
                                             {user?.age || "N/A"} years
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs sm:text-sm text-gray-600">
                                             Height:
                                         </span>
-                                        <span className="font-medium text-gray-800">
+                                        <span className="font-medium text-gray-800 text-xs sm:text-sm lg:text-base">
                                             {user?.height || "N/A"} cm
                                         </span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-gray-600">
+                                    <div className="flex justify-between items-center">
+                                        <span className="text-xs sm:text-sm text-gray-600">
                                             Gender:
                                         </span>
-                                        <span className="font-medium text-gray-800 capitalize">
+                                        <span className="font-medium text-gray-800 capitalize text-xs sm:text-sm lg:text-base">
                                             {user?.gender || "N/A"}
                                         </span>
                                     </div>
