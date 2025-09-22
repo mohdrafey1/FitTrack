@@ -186,21 +186,25 @@ const Analytics = () => {
                     </h3>
                     <TrendingUp className="w-4 h-4 text-gray-400" />
                 </div>
-                <div className="relative h-32 md:h-48">
+                <div className="relative h-40 md:h-48">
                     <div className="absolute inset-0 flex items-end justify-between px-2">
                         {chartData.map((item, index) => {
                             const value = item[dataKey] || 0;
                             // Better height calculation with minimum height
-                            let height;
+
+                            let barHeight;
                             if (maxValue === minValue) {
-                                height = 70; // Show 50% height when all values are the same
+                                barHeight = 0.5 * 128; // 50% of container height
                             } else {
-                                height = ((value - minValue) / range) * 85 + 20; // 10-95% range
+                                barHeight =
+                                    ((value - minValue) / range) * (128 * 0.9) +
+                                    128 * 0.1;
+                                // scale between 10% and 100% of container height
                             }
 
                             console.log(`${title} bar ${index}:`, {
                                 value,
-                                height,
+                                barHeight,
                             });
 
                             return (
@@ -213,9 +217,11 @@ const Analytics = () => {
                                             dataKey
                                         )} rounded-t-lg transition-all duration-700 ease-out mb-1 md:mb-2 relative group cursor-pointer shadow-sm hover:shadow-md`}
                                         style={{
-                                            height: `${Math.max(height, 12)}%`,
+                                            height: `${Math.max(
+                                                barHeight,
+                                                40
+                                            )}px`, // <-- PIXELS, not %
                                             width: "75%",
-                                            minHeight: "8px",
                                         }}
                                     >
                                         {/* Tooltip */}
