@@ -46,6 +46,9 @@ export function Screen({
         { paddingBottom: padBottom + insets.bottom },
       ]}
       keyboardShouldPersistTaps="handled"
+      // Lets iOS inset the scroll view for the keyboard natively — more
+      // reliable than wrapping a ScrollView in KeyboardAvoidingView.
+      automaticallyAdjustKeyboardInsets={keyboardAvoiding && Platform.OS === 'ios'}
       showsVerticalScrollIndicator={false}
       refreshControl={
         onRefresh ? (
@@ -78,7 +81,12 @@ export function Screen({
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={styles.flex}>
-      {keyboardAvoiding ? (
+      {/*
+        Scrolling screens handle the keyboard through the ScrollView itself
+        (see automaticallyAdjustKeyboardInsets); only non-scrolling screens
+        need KeyboardAvoidingView.
+      */}
+      {keyboardAvoiding && !scroll ? (
         <KeyboardAvoidingView
           style={styles.flex}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>

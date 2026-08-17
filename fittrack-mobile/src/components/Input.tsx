@@ -44,10 +44,18 @@ export function Input({
           !!error && styles.inputWrapperError,
         ]}>
         <TextInput
+          // Autofill is opt-out by default: Android's autofill service
+          // highlights every field of a recognized form at once and its overlay
+          // can swallow keystrokes. Screens opt in per-field where it's safe.
+          autoComplete="off"
+          importantForAutofill="no"
           {...rest}
           style={[styles.input, style]}
           secureTextEntry={hidden}
           placeholderTextColor={palette.gray400}
+          // `underlineColorAndroid` avoids the stock Android underline showing
+          // through our own bordered wrapper.
+          underlineColorAndroid="transparent"
           onFocus={(e) => {
             setFocused(true);
             rest.onFocus?.(e);

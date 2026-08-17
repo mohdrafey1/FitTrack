@@ -141,6 +141,7 @@ export default function SignupScreen() {
           onChangeText={(v) => set('username', v)}
           placeholder="fituser_01"
           autoCapitalize="none"
+          autoCorrect={false}
           error={errors.username}
         />
         <Input
@@ -150,7 +151,7 @@ export default function SignupScreen() {
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
-          autoComplete="email"
+          autoCorrect={false}
           error={errors.email}
         />
         <Input
@@ -159,7 +160,8 @@ export default function SignupScreen() {
           onChangeText={(v) => set('password', v)}
           placeholder="Minimum 6 characters"
           password
-          textContentType="oneTimeCode"
+          autoCapitalize="none"
+          autoCorrect={false}
           error={errors.password}
         />
         <Input
@@ -168,7 +170,8 @@ export default function SignupScreen() {
           onChangeText={(v) => set('confirmPassword', v)}
           placeholder="Repeat your password"
           password
-          textContentType="oneTimeCode"
+          autoCapitalize="none"
+          autoCorrect={false}
           error={errors.confirmPassword}
         />
       </Card>

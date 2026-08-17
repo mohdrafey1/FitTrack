@@ -68,8 +68,8 @@ export default function LoginScreen() {
           placeholder="you@example.com"
           keyboardType="email-address"
           autoCapitalize="none"
-          autoComplete="email"
-          textContentType="emailAddress"
+          autoCorrect={false}
+          returnKeyType="next"
           error={errors.email}
         />
 
@@ -82,8 +82,8 @@ export default function LoginScreen() {
           }}
           placeholder="Your password"
           password
-          autoComplete="password"
-          textContentType="password"
+          autoCapitalize="none"
+          autoCorrect={false}
           error={errors.password}
           onSubmitEditing={handleSubmit}
           returnKeyType="go"
