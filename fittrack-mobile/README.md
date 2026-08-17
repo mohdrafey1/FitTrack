@@ -22,6 +22,8 @@ Plus two mobile-only features powered by **local scheduled notifications** (no b
 
 Both are managed from the dedicated **Reminders & Notifications** screen (bell icon on the dashboard, or Profile → Settings), which also handles notification permissions, including deep-linking to system settings when permission was denied.
 
+**Over-the-air updates** — the app checks for EAS updates on launch and on foreground, downloads them in the background, and shows a tap-to-restart banner at the top of the screen. See [Over-the-air updates](#over-the-air-updates-eas-update).
+
 ## Architecture
 
 ```
@@ -40,7 +42,7 @@ fittrack-mobile/
     │       ├── edit-profile.tsx
     │       └── reminders/    # settings hub + protein & water editors
     ├── api/                  # axios client + typed endpoint wrappers
-    ├── components/           # Card, GradientButton, ProgressCard, BarChart, …
+    ├── components/           # Card, GradientButton, ProgressCard, BarChart, UpdateBanner, …
     ├── constants/theme.ts    # FitTrack design tokens (ported from Tailwind)
     ├── context/              # Auth, Reminders, Toast providers
     ├── data/foodDatabase.ts  # built-in foods (mirrors the web app)
@@ -131,6 +133,50 @@ eas build --platform ios --profile production
 ```
 
 Submit to the stores with `eas submit --platform android` / `--platform ios`.
+
+## Over-the-air updates (EAS Update)
+
+The app ships with **EAS Update** configured, so you can push JavaScript/asset changes to installed apps without a new store release.
+
+Configuration (already in place):
+
+- `app.json` → `updates.url` points at this project's EAS endpoint, `runtimeVersion.policy` is `appVersion`
+- `eas.json` → each build profile is bound to a channel: `development`, `preview`, `production`
+
+### Publishing an update
+
+```bash
+eas update --channel production --message "Fix water tracker rounding"
+
+# target a test audience first
+eas update --channel preview --message "Trying new dashboard layout"
+```
+
+Useful commands:
+
+```bash
+eas update:list                              # recent updates
+eas update:view <update-group-id>            # details
+eas update:republish --group <id>            # instant rollback to a previous update
+eas channel:list                             # channels and their branches
+```
+
+### What users see
+
+`src/components/UpdateBanner.tsx` checks for an update on launch and every time the app returns to the foreground. When one is found it downloads silently in the background, then slides a banner down from the top:
+
+> **New update ready** — Tap to restart and apply
+
+Tapping it calls `Updates.reloadAsync()` and the app relaunches on the new bundle (the banner shows a "Restarting…" spinner meanwhile). Users can dismiss the banner with the ✕ — it stays dismissed for that session and reappears on the next launch or when a newer update arrives, so an update is never silently forced mid-task.
+
+The banner renders nothing in development or Expo Go (`Updates.isEnabled` is `false` there); test it with a `preview`/`production` build.
+
+### Runtime version & native changes
+
+`runtimeVersion` uses the `appVersion` policy, meaning updates only reach builds with a **matching `version`** in `app.json`. Practically:
+
+- **JS / styling / assets only** → keep `version` unchanged and `eas update` reaches existing installs.
+- **Added or upgraded a native module, or changed native config** → bump `version`, run a new `eas build`, and ship through the stores. OTA cannot deliver native code.
 
 **Local native builds** (without EAS) also work if you have the native toolchains installed:
 

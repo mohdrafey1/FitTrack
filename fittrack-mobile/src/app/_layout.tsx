@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { UpdateBanner } from '@/components/UpdateBanner';
 import { AuthProvider, useAuth } from '@/context/AuthContext';
 import { RemindersProvider } from '@/context/RemindersContext';
 import { ToastProvider } from '@/context/ToastContext';
@@ -81,6 +82,7 @@ export default function RootLayout() {
           <ToastProvider>
             <StatusBar style="dark" />
             <RootNavigator />
+            <UpdateBanner />
           </ToastProvider>
         </RemindersProvider>
       </AuthProvider>

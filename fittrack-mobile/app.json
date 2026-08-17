@@ -55,6 +55,12 @@
         "projectId": "11a3afff-ff6b-44df-80dd-7e15b0b3d2d9"
       }
     },
-    "owner": "mohdrafey1"
+    "owner": "mohdrafey1",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/11a3afff-ff6b-44df-80dd-7e15b0b3d2d9"
+    }
   }
 }

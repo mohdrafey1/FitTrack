@@ -83,6 +83,7 @@ A comprehensive nutrition and fitness tracking application built with React, Rea
 -   **TypeScript** - Fully typed codebase
 -   **Expo Router** - File-based native navigation (tabs + modals)
 -   **Expo Notifications** - Local scheduled protein & water reminders
+-   **EAS Update** - Over-the-air updates with an in-app "tap to restart" banner
 -   **Expo SecureStore / AsyncStorage** - Secure session + settings persistence
 -   Shares the same backend, accounts and data as the web app — see [`fittrack-mobile/README.md`](fittrack-mobile/README.md)
 
