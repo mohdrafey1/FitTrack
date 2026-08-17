@@ -1,4 +1,4 @@
-import { Eye, EyeOff } from 'lucide-react-native';
+import { Eye, EyeOff, type LucideIcon } from 'lucide-react-native';
 import React, { useState } from 'react';
 import {
   Pressable,
@@ -19,6 +19,8 @@ interface InputProps extends TextInputProps {
   hint?: string;
   /** Renders a show/hide toggle and secures the field. */
   password?: boolean;
+  /** Optional leading icon shown inside the field. */
+  icon?: LucideIcon;
   containerStyle?: StyleProp<ViewStyle>;
 }
 
@@ -27,6 +29,7 @@ export function Input({
   error,
   hint,
   password = false,
+  icon: Icon,
   containerStyle,
   style,
   ...rest
@@ -43,6 +46,11 @@ export function Input({
           focused && styles.inputWrapperFocused,
           !!error && styles.inputWrapperError,
         ]}>
+        {Icon && (
+          <View style={styles.leadingIcon}>
+            <Icon size={18} color={focused ? palette.blue500 : palette.gray400} />
+          </View>
+        )}
         <TextInput
           // Autofill is opt-out by default: Android's autofill service
           // highlights every field of a recognized form at once and its overlay
@@ -103,21 +111,26 @@ const styles = StyleSheet.create({
     borderColor: colors.inputBorder,
     borderRadius: radius.md,
   },
+  /**
+   * Focus must only change *existing* properties. Adding shadow/elevation props
+   * on focus makes Android recreate the native view, which detaches the child
+   * TextInput — the keyboard closes mid-tap and onBlur never fires, so fields
+   * get stuck looking focused. Border colour alone is a cheap prop update.
+   */
   inputWrapperFocused: {
     borderColor: palette.blue500,
-    shadowColor: palette.blue500,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.15,
-    shadowRadius: 4,
   },
   inputWrapperError: {
     borderColor: palette.red500,
   },
+  leadingIcon: {
+    paddingLeft: spacing.md,
+  },
   input: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 12,
-    fontSize: 15,
+    paddingVertical: 13,
+    fontSize: 15.5,
     color: colors.text,
   },
   eyeButton: {
