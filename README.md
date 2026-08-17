@@ -1,6 +1,6 @@
 # FitTrack 🏃‍♂️💪
 
-A comprehensive nutrition and fitness tracking application built with React and Node.js. FitTrack helps users monitor their daily food intake, track calories, protein, and water consumption with detailed analytics and insights.
+A comprehensive nutrition and fitness tracking application built with React, React Native (Expo), and Node.js. FitTrack helps users monitor their daily food intake, track calories, protein, and water consumption with detailed analytics and insights — on the web and on a native Android/iOS app that share the same backend and data.
 
 ![FitTrack](https://img.shields.io/badge/FitTrack-Nutrition%20Tracker-brightgreen)
 ![React](https://img.shields.io/badge/React-19.1.1-blue)
@@ -39,6 +39,14 @@ A comprehensive nutrition and fitness tracking application built with React and 
 -   **Real-time Updates**: Instant feedback and notifications
 -   **UTC Consistency**: Timezone-aware date handling for global users
 
+### 📲 Native Mobile App (Expo)
+
+-   **Android & iOS**: Full-featured React Native app sharing the same account and data as the web app
+-   **Protein Reminders**: Multiple daily reminders with custom times and messages
+-   **Water Reminders**: Configurable interval (1–4h or custom) within a start/end window
+-   **Local Notifications**: Reminders fire on-device — no backend or internet required; tapping opens the matching logging screen
+-   **Native UX**: Bottom-tab navigation, native date/time pickers, pull-to-refresh, haptic-friendly touch targets
+
 ### 🔐 Authentication & Security
 
 -   **Secure Authentication**: JWT-based user authentication
@@ -68,6 +76,15 @@ A comprehensive nutrition and fitness tracking application built with React and 
 -   **bcryptjs** - Password hashing
 -   **CORS** - Cross-origin resource sharing
 -   **Express Validator** - Input validation middleware
+
+### Mobile App
+
+-   **Expo SDK 57** - React Native 0.86 with the New Architecture
+-   **TypeScript** - Fully typed codebase
+-   **Expo Router** - File-based native navigation (tabs + modals)
+-   **Expo Notifications** - Local scheduled protein & water reminders
+-   **Expo SecureStore / AsyncStorage** - Secure session + settings persistence
+-   Shares the same backend, accounts and data as the web app — see [`fittrack-mobile/README.md`](fittrack-mobile/README.md)
 
 ## 📁 Project Structure
 
@@ -115,6 +132,16 @@ FitTrack/
 │   ├── scripts/                       # Utility scripts
 │   ├── index.js                       # Server entry point
 │   └── package.json
+├── fittrack-mobile/                   # Expo React Native mobile app (Android/iOS)
+│   ├── src/
+│   │   ├── app/                       # Expo Router screens (tabs, modals, reminders)
+│   │   ├── api/                       # Typed API client (same backend endpoints)
+│   │   ├── components/                # Shared UI components
+│   │   ├── context/                   # Auth / Reminders / Toast providers
+│   │   ├── notifications/             # Local reminder scheduling engine
+│   │   └── ...
+│   ├── app.json                       # Expo configuration
+│   └── README.md                      # Mobile setup & EAS build guide
 └── README.md                          # This file
 ```
 
@@ -196,6 +223,18 @@ FitTrack/
     ```
 
     The frontend will be available at `http://localhost:6173`
+
+### Mobile App Setup
+
+With the backend running:
+
+```bash
+cd fittrack-mobile
+npm install
+npm start        # then press `a` (Android), `i` (iOS), or scan the QR with Expo Go
+```
+
+No API configuration is needed in development — the app automatically targets the machine running the Expo dev server on port `6001`. The mobile app adds **protein reminders** and **configurable water reminders** via local notifications. Full instructions, including production Android/iOS builds with EAS, are in [`fittrack-mobile/README.md`](fittrack-mobile/README.md).
 
 ## 🔌 API Endpoints
 
