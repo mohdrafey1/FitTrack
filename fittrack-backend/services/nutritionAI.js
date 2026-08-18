@@ -1,3 +1,5 @@
+const { generate, isConfigured, GeminiError } = require("./gemini");
+
 /**
  * AI nutrition lookup.
  *
@@ -6,21 +8,12 @@
  * CustomFood model enforces, so a suggestion can always be saved.
  *
  * The API key never leaves the server: the mobile app calls our route, we call
- * Google. No SDK — Node's global fetch is enough.
+ * Google. Transport lives in services/gemini.js.
  *
  * Configure with:
  *   GEMINI_API_KEY   required; without it the feature reports itself unavailable
  *   GEMINI_MODEL     optional; defaults to the cheapest current flash-lite
  */
-
-const GEMINI_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/interactions";
-
-// Pinned so a future breaking revision can't silently change the payload shape.
-const GEMINI_API_REVISION = "2026-05-20";
-
-const DEFAULT_MODEL = "gemini-3.1-flash-lite";
-
-const REQUEST_TIMEOUT_MS = 20000;
 
 /** Mirrors the enum on the CustomFood schema. */
 const CATEGORIES = [
@@ -141,14 +134,6 @@ const SYSTEM_INSTRUCTION = [
     "- Report the values you are most confident are typical. Do not round everything to multiples of 5.",
 ].join("\n");
 
-/** True when the server has an API key and the feature can be offered. */
-function isConfigured() {
-    return Boolean(process.env.GEMINI_API_KEY);
-}
-
-function getModel() {
-    return process.env.GEMINI_MODEL || DEFAULT_MODEL;
-}
 
 function clamp(value, { min, max }) {
     if (typeof value !== "number" || !Number.isFinite(value)) return min;
@@ -256,57 +241,12 @@ function reconcile(raw) {
 }
 
 /**
- * Pull the generated JSON text out of an Interactions API response.
- *
- * `output_text` is the documented convenience field; the fallbacks cover the
- * step/content shapes so a payload tweak degrades into a clear error rather
- * than an undefined read.
- */
-function extractText(payload) {
-    if (typeof payload?.output_text === "string" && payload.output_text.trim()) {
-        return payload.output_text;
-    }
-
-    const fromSteps = [];
-    const visit = (node) => {
-        if (!node || typeof node !== "object") return;
-        if (Array.isArray(node)) {
-            node.forEach(visit);
-            return;
-        }
-        if (typeof node.text === "string" && node.text.trim()) fromSteps.push(node.text);
-        for (const key of ["steps", "content", "parts", "outputs"]) {
-            if (node[key]) visit(node[key]);
-        }
-    };
-    visit(payload?.steps ?? payload?.outputs);
-
-    if (fromSteps.length) return fromSteps.join("");
-    return null;
-}
-
-class NutritionAIError extends Error {
-    constructor(message, status = 502) {
-        super(message);
-        this.name = "NutritionAIError";
-        this.status = status;
-    }
-}
-
-/**
  * Ask the model for nutrition facts.
  *
  * @param {string} name        food name as typed by the user
  * @param {string} description optional extra context (preparation, brand…)
  */
 async function suggestNutrition(name, description = "") {
-    if (!isConfigured()) {
-        throw new NutritionAIError(
-            "AI lookup is not configured on this server.",
-            503
-        );
-    }
-
     const input = [
         `Food name: ${name.trim()}`,
         description.trim() ? `Description: ${description.trim()}` : null,
@@ -314,70 +254,16 @@ async function suggestNutrition(name, description = "") {
         .filter(Boolean)
         .join("\n");
 
-    let response;
-    try {
-        response = await fetch(GEMINI_ENDPOINT, {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "x-goog-api-key": process.env.GEMINI_API_KEY,
-                "Api-Revision": GEMINI_API_REVISION,
-            },
-            body: JSON.stringify({
-                model: getModel(),
-                system_instruction: SYSTEM_INSTRUCTION,
-                input,
-                response_format: {
-                    type: "text",
-                    mime_type: "application/json",
-                    schema: RESPONSE_SCHEMA,
-                },
-                generation_config: {
-                    // Nutrition lookup is recall, not reasoning — keep it fast
-                    // and cheap, and keep the numbers stable between runs.
-                    thinking_level: "minimal",
-                    temperature: 0.2,
-                    max_output_tokens: 700,
-                },
-            }),
-            signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
-        });
-    } catch (error) {
-        if (error.name === "TimeoutError" || error.name === "AbortError") {
-            throw new NutritionAIError("AI lookup timed out. Try again.", 504);
-        }
-        throw new NutritionAIError("Could not reach the AI service.", 502);
-    }
-
-    if (!response.ok) {
-        const body = await response.text().catch(() => "");
-        console.error(
-            `Gemini request failed: ${response.status} ${body.slice(0, 500)}`
-        );
-        if (response.status === 429) {
-            throw new NutritionAIError("AI lookup is rate limited. Try again shortly.", 429);
-        }
-        if (response.status === 401 || response.status === 403) {
-            throw new NutritionAIError("AI lookup is misconfigured on this server.", 503);
-        }
-        throw new NutritionAIError("The AI service returned an error.", 502);
-    }
-
-    const payload = await response.json().catch(() => null);
-
-    if (payload?.status === "failed" || payload?.errors?.length) {
-        const detail = payload?.errors?.[0]?.message || "unknown error";
-        console.error(`Gemini interaction failed: ${detail}`);
-        throw new NutritionAIError("The AI service could not complete the request.", 502);
-    }
-
-    const text = extractText(payload);
-    if (!text) {
-        console.error(
-            `Gemini response had no text: ${JSON.stringify(payload).slice(0, 500)}`
-        );
-        throw new NutritionAIError("The AI service returned an empty response.", 502);
-    }
+    const { text, model } = await generate({
+        systemInstruction: SYSTEM_INSTRUCTION,
+        input,
+        schema: RESPONSE_SCHEMA,
+        // Nutrition lookup is recall, not reasoning — keep it fast and cheap,
+        // and keep the numbers stable between runs.
+        thinkingLevel: "minimal",
+        temperature: 0.2,
+        maxOutputTokens: 700,
+    });
 
     let parsed;
     try {
@@ -386,7 +272,6 @@ async function suggestNutrition(name, description = "") {
         console.error(`Gemini returned non-JSON: ${text.slice(0, 300)}`);
         throw new NutritionAIError("The AI service returned an unreadable response.", 502);
     }
-
     if (parsed.recognized === false) {
         throw new NutritionAIError(
             "That doesn't look like a food we can estimate. Try a more specific name.",
@@ -396,9 +281,15 @@ async function suggestNutrition(name, description = "") {
 
     return {
         ...reconcile(parsed),
-        model: getModel(),
+        model,
     };
 }
+
+/**
+ * Kept as a distinct name so route handlers can catch nutrition failures
+ * specifically; transport failures arrive as GeminiError and carry a status too.
+ */
+const NutritionAIError = GeminiError;
 
 module.exports = {
     suggestNutrition,

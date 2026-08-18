@@ -1,7 +1,9 @@
 import { Tabs } from 'expo-router';
 import { BarChart3, CalendarDays, LayoutDashboard, User } from 'lucide-react-native';
 import React from 'react';
+import { View, StyleSheet } from 'react-native';
 
+import { FitAIButton } from '@/components/FitAIButton';
 import { colors, layout, typography } from '@/constants/theme';
 import { haptics } from '@/utils/haptics';
 
@@ -12,7 +14,9 @@ const tabListeners = {
 
 export default function TabsLayout() {
   return (
-    <Tabs
+    // box-none lets touches through to the tabs except on the button itself.
+    <View style={styles.container} pointerEvents="box-none">
+      <Tabs
       screenOptions={{
         headerShown: false,
         tabBarActiveTintColor: colors.primary,
@@ -58,6 +62,12 @@ export default function TabsLayout() {
           tabBarIcon: ({ color }) => <User size={layout.icon.xl} color={color} />,
         }}
       />
-    </Tabs>
+      </Tabs>
+      <FitAIButton />
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: { flex: 1 },
+});

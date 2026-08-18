@@ -24,6 +24,7 @@ import { foodApi } from '@/api/food';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { EmptyState } from '@/components/EmptyState';
+import { FITAI_CLEARANCE } from '@/components/FitAIButton';
 import { Input } from '@/components/Input';
 import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
@@ -213,7 +214,7 @@ export default function HistoryScreen() {
   };
 
   return (
-    <Screen refreshing={refreshing} onRefresh={onRefresh}>
+    <Screen refreshing={refreshing} onRefresh={onRefresh} padBottom={FITAI_CLEARANCE}>
       <Animated.View entering={enter(0)}>
         <ScreenTitle title="Food History" subtitle="Track your nutrition journey" />
 

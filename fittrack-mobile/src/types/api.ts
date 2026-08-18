@@ -223,3 +223,21 @@ export interface AiSuggestionResult {
   data: AiNutritionSuggestion;
   meta: AiSuggestionMeta;
 }
+
+/** Which slice of the user's logs FitAI is given. */
+export type CoachRange = 'today' | 'week' | 'month';
+
+export interface CoachTurn {
+  role: 'user' | 'assistant';
+  content: string;
+}
+
+export interface CoachAnswer {
+  answer: string;
+  range: CoachRange;
+}
+
+export interface CoachStatus {
+  available: boolean;
+  ranges: CoachRange[];
+}

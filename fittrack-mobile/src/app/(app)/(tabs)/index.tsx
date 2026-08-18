@@ -22,6 +22,7 @@ import { getApiErrorMessage } from '@/api/client';
 import { BrandMark } from '@/components/BrandMark';
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
+import { FITAI_CLEARANCE } from '@/components/FitAIButton';
 import { GoalRing } from '@/components/GoalRing';
 import { GradientButton } from '@/components/GradientButton';
 import { PressableScale } from '@/components/PressableScale';
@@ -163,7 +164,7 @@ export default function DashboardScreen() {
   const bmiInfo = bmi ? bmiCategory(bmi) : null;
 
   return (
-    <Screen refreshing={refreshing} onRefresh={onRefresh}>
+    <Screen refreshing={refreshing} onRefresh={onRefresh} padBottom={FITAI_CLEARANCE}>
       {/* Header: brand, greeting and reminders — one row instead of three. */}
       <Animated.View entering={enter(0)} style={styles.header}>
         <BrandMark size={34} />

@@ -15,6 +15,7 @@ export default function AppLayout() {
       <Stack.Screen name="log-food" options={{ presentation: 'modal' }} />
       <Stack.Screen name="log-water" options={{ presentation: 'modal' }} />
       <Stack.Screen name="create-food" options={{ presentation: 'modal' }} />
+      <Stack.Screen name="fitai" options={{ presentation: 'modal' }} />
       <Stack.Screen name="edit-profile" options={{ presentation: 'modal' }} />
       <Stack.Screen name="reminders/index" />
       <Stack.Screen name="reminders/protein" options={{ presentation: 'modal' }} />

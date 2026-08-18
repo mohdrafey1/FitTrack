@@ -21,6 +21,7 @@ import { BarChart } from '@/components/BarChart';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { EmptyState } from '@/components/EmptyState';
+import { FITAI_CLEARANCE } from '@/components/FitAIButton';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
 import { ScreenTitle } from '@/components/ScreenTitle';
@@ -111,7 +112,7 @@ export default function AnalyticsScreen() {
   const hasData = !!analytics && analytics.summary.totalEntries > 0;
 
   return (
-    <Screen refreshing={refreshing} onRefresh={onRefresh}>
+    <Screen refreshing={refreshing} onRefresh={onRefresh} padBottom={FITAI_CLEARANCE}>
       <Animated.View entering={enter(0)}>
         <ScreenTitle title="Analytics" subtitle="Insights from your nutrition history" />
 

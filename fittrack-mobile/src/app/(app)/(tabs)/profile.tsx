@@ -18,6 +18,7 @@ import { Alert, StyleSheet, Text, View } from 'react-native';
 import Animated from 'react-native-reanimated';
 
 import { Card } from '@/components/Card';
+import { FITAI_CLEARANCE } from '@/components/FitAIButton';
 import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
 import { ScreenTitle } from '@/components/ScreenTitle';
@@ -65,7 +66,7 @@ export default function ProfileScreen() {
   const bmiInfo = bmi ? bmiCategory(bmi) : null;
 
   return (
-    <Screen refreshing={refreshing} onRefresh={onRefresh}>
+    <Screen refreshing={refreshing} onRefresh={onRefresh} padBottom={FITAI_CLEARANCE}>
       <Animated.View entering={enter(0)}>
         <ScreenTitle title="Profile" />
 
