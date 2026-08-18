@@ -2,7 +2,7 @@ import type { LucideIcon } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, palette, spacing } from '@/constants/theme';
+import { colors, layout, spacing, typography } from '@/constants/theme';
 
 interface SectionHeaderProps {
   title: string;
@@ -15,14 +15,16 @@ interface SectionHeaderProps {
 export function SectionHeader({
   title,
   icon: Icon,
-  iconColor = palette.indigo600,
+  iconColor = colors.textMuted,
   right,
 }: SectionHeaderProps) {
   return (
     <View style={styles.row}>
       <View style={styles.titleGroup}>
-        {Icon && <Icon size={20} color={iconColor} strokeWidth={2.2} />}
-        <Text style={styles.title}>{title}</Text>
+        {Icon && <Icon size={layout.icon.md} color={iconColor} strokeWidth={layout.strokeWidth} />}
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
       </View>
       {right}
     </View>
@@ -34,6 +36,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 22,
     marginBottom: spacing.md,
   },
   titleGroup: {
@@ -42,8 +45,6 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   title: {
-    fontSize: 17,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.heading,
   },
 });

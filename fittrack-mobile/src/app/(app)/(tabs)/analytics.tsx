@@ -13,21 +13,34 @@ import {
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { foodApi } from '@/api/food';
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { BarChart } from '@/components/BarChart';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { EmptyState } from '@/components/EmptyState';
 import { ProgressBar } from '@/components/ProgressBar';
 import { Screen } from '@/components/Screen';
+import { ScreenTitle } from '@/components/ScreenTitle';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Skeleton } from '@/components/Skeleton';
-import { colors, gradients, palette, radius, spacing } from '@/constants/theme';
+import {
+  colors,
+  gradients,
+  layout,
+  palette,
+  radius,
+  spacing,
+  typography,
+  type Gradient,
+} from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import type { AnalyticsData } from '@/types/api';
 import { formatShortDate } from '@/utils/date';
 import { formatNumber, progressPercent, rawPercent } from '@/utils/format';
+import { enter } from '@/utils/motion';
 
 const PERIODS = [7, 14, 30] as const;
 
@@ -99,32 +112,33 @@ export default function AnalyticsScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Analytics</Text>
-        <Text style={styles.subtitle}>Insights from your nutrition history</Text>
-      </View>
+      <Animated.View entering={enter(0)}>
+        <ScreenTitle title="Analytics" subtitle="Insights from your nutrition history" />
 
-      <View style={styles.periodRow}>
-        {PERIODS.map((option) => (
-          <Chip
-            key={option}
-            label={`${option} days`}
-            selected={period === option}
-            onPress={() => setPeriod(option)}
-            selectedColor={palette.indigo600}
-            style={styles.periodChip}
-          />
-        ))}
-      </View>
+        <View style={styles.periodRow}>
+          {PERIODS.map((option) => (
+            <Chip
+              key={option}
+              label={`${option} days`}
+              selected={period === option}
+              onPress={() => setPeriod(option)}
+              selectedColor={palette.indigo600}
+              style={styles.periodChip}
+            />
+          ))}
+        </View>
+      </Animated.View>
 
       {loading ? (
-        <View style={{ gap: spacing.md }}>
+        <View style={styles.loadingList}>
           <View style={styles.grid2}>
-            <Skeleton height={110} borderRadius={radius.lg} width="48%" />
-            <Skeleton height={110} borderRadius={radius.lg} width="48%" />
+            <Skeleton height={86} borderRadius={radius.lg} width="48.4%" />
+            <Skeleton height={86} borderRadius={radius.lg} width="48.4%" />
+            <Skeleton height={86} borderRadius={radius.lg} width="48.4%" />
+            <Skeleton height={86} borderRadius={radius.lg} width="48.4%" />
           </View>
-          <Skeleton height={110} borderRadius={radius.lg} />
-          <Skeleton height={180} borderRadius={radius.lg} />
+          <Skeleton height={104} borderRadius={radius.lg} />
+          <Skeleton height={168} borderRadius={radius.lg} />
         </View>
       ) : !hasData ? (
         <Card>
@@ -138,10 +152,10 @@ export default function AnalyticsScreen() {
         analytics && (
           <>
             {/* Averages */}
-            <View style={styles.grid2}>
+            <Animated.View entering={enter(1)} style={styles.grid2}>
               <AverageCard
                 title="Avg Calories"
-                value={formatNumber(analytics.summary.avgCalories)}
+                value={analytics.summary.avgCalories}
                 unit="cal"
                 percent={rawPercent(analytics.summary.avgCalories, user?.targetDailyCalories ?? 0)}
                 icon={Flame}
@@ -150,7 +164,7 @@ export default function AnalyticsScreen() {
               />
               <AverageCard
                 title="Avg Protein"
-                value={`${analytics.summary.avgProtein}`}
+                value={analytics.summary.avgProtein}
                 unit="g"
                 percent={rawPercent(analytics.summary.avgProtein, user?.targetDailyProteins ?? 0)}
                 icon={Heart}
@@ -159,7 +173,7 @@ export default function AnalyticsScreen() {
               />
               <AverageCard
                 title="Avg Water"
-                value={formatNumber(analytics.summary.avgWater)}
+                value={analytics.summary.avgWater}
                 unit="ml"
                 percent={rawPercent(analytics.summary.avgWater, user?.targetDailyWater ?? 0)}
                 icon={Droplets}
@@ -168,162 +182,175 @@ export default function AnalyticsScreen() {
               />
               <AverageCard
                 title="Active Days"
-                value={`${analytics.summary.totalEntries}`}
+                value={analytics.summary.totalEntries}
                 unit={`/ ${analytics.period.days}`}
                 icon={CalendarDays}
                 color={palette.emerald600}
                 bg={palette.emerald100}
               />
-            </View>
+            </Animated.View>
 
             {/* Streaks */}
-            <Card style={styles.streakCard}>
-              <SectionHeader title="Tracking Streaks" icon={Zap} iconColor={palette.orange500} />
-              <View style={styles.streakRow}>
-                <View style={[styles.streakTile, { backgroundColor: '#FFF7ED' }]}>
-                  <View style={styles.streakValueRow}>
-                    <Activity size={16} color={palette.orange500} />
-                    <Text style={[styles.streakValue, { color: palette.orange600 }]}>
-                      {streaks.current}
-                    </Text>
+            <Animated.View entering={enter(2)}>
+              <Card style={styles.streakCard}>
+                <SectionHeader title="Tracking Streaks" icon={Zap} iconColor={palette.orange500} />
+                <View style={styles.streakRow}>
+                  <View style={[styles.streakTile, { backgroundColor: palette.orange100 }]}>
+                    <View style={styles.streakValueRow}>
+                      <Activity size={layout.icon.sm} color={palette.orange500} />
+                      <AnimatedNumber
+                        value={streaks.current}
+                        style={[styles.streakValue, { color: palette.orange600 }]}
+                      />
+                    </View>
+                    <Text style={styles.streakLabel}>Current</Text>
+                    <Text style={styles.streakUnit}>days</Text>
                   </View>
-                  <Text style={styles.streakLabel}>Current</Text>
-                  <Text style={styles.streakUnit}>days</Text>
-                </View>
-                <View style={[styles.streakTile, { backgroundColor: '#ECFDF5' }]}>
-                  <View style={styles.streakValueRow}>
-                    <Trophy size={16} color={palette.emerald500} />
-                    <Text style={[styles.streakValue, { color: palette.emerald600 }]}>
-                      {streaks.best}
-                    </Text>
+                  <View style={[styles.streakTile, { backgroundColor: palette.emerald100 }]}>
+                    <View style={styles.streakValueRow}>
+                      <Trophy size={layout.icon.sm} color={palette.emerald500} />
+                      <AnimatedNumber
+                        value={streaks.best}
+                        style={[styles.streakValue, { color: palette.emerald600 }]}
+                      />
+                    </View>
+                    <Text style={styles.streakLabel}>Best</Text>
+                    <Text style={styles.streakUnit}>days</Text>
                   </View>
-                  <Text style={styles.streakLabel}>Best</Text>
-                  <Text style={styles.streakUnit}>days</Text>
                 </View>
-              </View>
-            </Card>
+              </Card>
+            </Animated.View>
 
             {/* Best days */}
-            <SectionHeader title="Best Days" icon={Award} iconColor={palette.amber600} />
-            <View style={styles.bestRow}>
-              {analytics.bestDays.calories && (
-                <BestDayCard
-                  label="Calories"
-                  value={`${analytics.bestDays.calories.value}`}
-                  unit="cal"
-                  date={analytics.bestDays.calories.date}
-                  color={palette.orange600}
-                />
-              )}
-              {analytics.bestDays.protein && (
-                <BestDayCard
-                  label="Protein"
-                  value={`${analytics.bestDays.protein.value}`}
-                  unit="g"
-                  date={analytics.bestDays.protein.date}
-                  color={palette.red600}
-                />
-              )}
-              {analytics.bestDays.water && (
-                <BestDayCard
-                  label="Hydration"
-                  value={`${analytics.bestDays.water.value}`}
-                  unit="ml"
-                  date={analytics.bestDays.water.date}
-                  color={palette.blue600}
-                />
-              )}
-            </View>
+            <Animated.View entering={enter(3)}>
+              <SectionHeader title="Best Days" icon={Award} iconColor={palette.amber600} />
+              <View style={styles.bestRow}>
+                {analytics.bestDays.calories && (
+                  <BestDayCard
+                    label="Calories"
+                    value={`${analytics.bestDays.calories.value}`}
+                    unit="cal"
+                    date={analytics.bestDays.calories.date}
+                    color={palette.orange600}
+                  />
+                )}
+                {analytics.bestDays.protein && (
+                  <BestDayCard
+                    label="Protein"
+                    value={`${analytics.bestDays.protein.value}`}
+                    unit="g"
+                    date={analytics.bestDays.protein.date}
+                    color={palette.red600}
+                  />
+                )}
+                {analytics.bestDays.water && (
+                  <BestDayCard
+                    label="Hydration"
+                    value={`${analytics.bestDays.water.value}`}
+                    unit="ml"
+                    date={analytics.bestDays.water.date}
+                    color={palette.blue600}
+                  />
+                )}
+              </View>
+            </Animated.View>
 
             {/* Trend charts */}
-            <SectionHeader title="Trends" icon={BarChart3} />
-            <View style={styles.chartList}>
-              <BarChart
-                title="Calories"
-                icon={Flame}
-                gradient={gradients.calories}
-                unit="cal / day"
-                target={user?.targetDailyCalories}
-                data={chronological.map((e) => ({ date: e.date, value: e.calories }))}
-              />
-              <BarChart
-                title="Protein"
-                icon={Heart}
-                gradient={gradients.protein}
-                unit="g / day"
-                target={user?.targetDailyProteins}
-                data={chronological.map((e) => ({ date: e.date, value: e.protein }))}
-              />
-              <BarChart
-                title="Water Intake"
-                icon={Droplets}
-                gradient={gradients.water}
-                unit="ml / day"
-                target={user?.targetDailyWater}
-                data={chronological.map((e) => ({ date: e.date, value: e.water }))}
-              />
-              <BarChart
-                title="Food Items"
-                icon={UtensilsCrossed}
-                gradient={gradients.history}
-                unit="items / day"
-                data={chronological.map((e) => ({ date: e.date, value: e.foodCount }))}
-              />
-            </View>
+            <Animated.View entering={enter(4)}>
+              <SectionHeader title="Trends" icon={BarChart3} />
+              <View style={styles.chartList}>
+                <BarChart
+                  title="Calories"
+                  icon={Flame}
+                  gradient={gradients.calories}
+                  unit="cal / day"
+                  target={user?.targetDailyCalories}
+                  data={chronological.map((e) => ({ date: e.date, value: e.calories }))}
+                />
+                <BarChart
+                  title="Protein"
+                  icon={Heart}
+                  gradient={gradients.protein}
+                  unit="g / day"
+                  target={user?.targetDailyProteins}
+                  data={chronological.map((e) => ({ date: e.date, value: e.protein }))}
+                />
+                <BarChart
+                  title="Water Intake"
+                  icon={Droplets}
+                  gradient={gradients.water}
+                  unit="ml / day"
+                  target={user?.targetDailyWater}
+                  data={chronological.map((e) => ({ date: e.date, value: e.water }))}
+                />
+                <BarChart
+                  title="Food Items"
+                  icon={UtensilsCrossed}
+                  gradient={gradients.history}
+                  unit="items / day"
+                  data={chronological.map((e) => ({ date: e.date, value: e.foodCount }))}
+                />
+              </View>
+            </Animated.View>
 
             {/* Key insights */}
-            <Card style={styles.insightsCard}>
-              <SectionHeader title="Key Insights" icon={BarChart3} />
-              <View style={styles.insightRows}>
-                <InsightRow
-                  label="Total calories"
-                  value={formatNumber(analytics.summary.totalCalories)}
-                />
-                <InsightRow
-                  label="Total protein"
-                  value={`${formatNumber(Math.round(analytics.summary.totalProtein))}g`}
-                />
-                <InsightRow
-                  label="Total water"
-                  value={`${formatNumber(analytics.summary.totalWater)}ml`}
-                />
-                <InsightRow
-                  label="Active days"
-                  value={`${analytics.summary.totalEntries}/${analytics.period.days}`}
-                />
-              </View>
-
-              <View style={styles.goalBlock}>
-                <View style={styles.goalHeader}>
-                  <Target size={15} color={palette.gray600} />
-                  <Text style={styles.goalTitle}>Goal Achievement (averages)</Text>
+            <Animated.View entering={enter(5)}>
+              <Card style={styles.insightsCard}>
+                <SectionHeader title="Key Insights" icon={BarChart3} />
+                <View style={styles.insightRows}>
+                  <InsightRow
+                    label="Total calories"
+                    value={formatNumber(analytics.summary.totalCalories)}
+                  />
+                  <InsightRow
+                    label="Total protein"
+                    value={`${formatNumber(Math.round(analytics.summary.totalProtein))}g`}
+                  />
+                  <InsightRow
+                    label="Total water"
+                    value={`${formatNumber(analytics.summary.totalWater)}ml`}
+                  />
+                  <InsightRow
+                    label="Active days"
+                    value={`${analytics.summary.totalEntries}/${analytics.period.days}`}
+                  />
                 </View>
-                <GoalBar
-                  label="Calories"
-                  percent={progressPercent(
-                    analytics.summary.avgCalories,
-                    user?.targetDailyCalories ?? 0
-                  )}
-                  raw={rawPercent(analytics.summary.avgCalories, user?.targetDailyCalories ?? 0)}
-                  gradient={gradients.calories}
-                />
-                <GoalBar
-                  label="Protein"
-                  percent={progressPercent(
-                    analytics.summary.avgProtein,
-                    user?.targetDailyProteins ?? 0
-                  )}
-                  raw={rawPercent(analytics.summary.avgProtein, user?.targetDailyProteins ?? 0)}
-                  gradient={gradients.protein}
-                />
-                <GoalBar
-                  label="Water"
-                  percent={progressPercent(analytics.summary.avgWater, user?.targetDailyWater ?? 0)}
-                  raw={rawPercent(analytics.summary.avgWater, user?.targetDailyWater ?? 0)}
-                  gradient={gradients.water}
-                />
-              </View>
-            </Card>
+
+                <View style={styles.goalBlock}>
+                  <View style={styles.goalHeader}>
+                    <Target size={layout.icon.sm} color={colors.textMuted} />
+                    <Text style={styles.goalTitle}>Goal Achievement (averages)</Text>
+                  </View>
+                  <GoalBar
+                    label="Calories"
+                    percent={progressPercent(
+                      analytics.summary.avgCalories,
+                      user?.targetDailyCalories ?? 0
+                    )}
+                    raw={rawPercent(analytics.summary.avgCalories, user?.targetDailyCalories ?? 0)}
+                    gradient={gradients.calories}
+                  />
+                  <GoalBar
+                    label="Protein"
+                    percent={progressPercent(
+                      analytics.summary.avgProtein,
+                      user?.targetDailyProteins ?? 0
+                    )}
+                    raw={rawPercent(analytics.summary.avgProtein, user?.targetDailyProteins ?? 0)}
+                    gradient={gradients.protein}
+                  />
+                  <GoalBar
+                    label="Water"
+                    percent={progressPercent(
+                      analytics.summary.avgWater,
+                      user?.targetDailyWater ?? 0
+                    )}
+                    raw={rawPercent(analytics.summary.avgWater, user?.targetDailyWater ?? 0)}
+                    gradient={gradients.water}
+                  />
+                </View>
+              </Card>
+            </Animated.View>
           </>
         )
       )}
@@ -341,7 +368,7 @@ function AverageCard({
   bg,
 }: {
   title: string;
-  value: string;
+  value: number;
   unit: string;
   percent?: number;
   icon: typeof Flame;
@@ -349,23 +376,26 @@ function AverageCard({
   bg: string;
 }) {
   return (
-    <Card style={avgStyles.card}>
+    <Card compact style={avgStyles.card}>
       <View style={avgStyles.header}>
-        <Text style={avgStyles.title}>{title}</Text>
         <View style={[avgStyles.iconBox, { backgroundColor: bg }]}>
-          <Icon size={15} color={color} />
+          <Icon size={layout.icon.sm} color={color} strokeWidth={layout.strokeWidth} />
         </View>
+        <Text style={avgStyles.title} numberOfLines={1}>
+          {title}
+        </Text>
       </View>
       <View style={avgStyles.valueRow}>
-        <Text style={[avgStyles.value, { color }]}>{value}</Text>
-        <Text style={avgStyles.unit}>{unit}</Text>
+        <AnimatedNumber value={value} style={[avgStyles.value, { color }]} numberOfLines={1} />
+        <Text style={avgStyles.unit} numberOfLines={1}>
+          {unit}
+        </Text>
+        {percent !== undefined && percent > 0 && (
+          <Text style={avgStyles.percentText} numberOfLines={1}>
+            {percent}% of goal
+          </Text>
+        )}
       </View>
-      {percent !== undefined && percent > 0 && (
-        <View style={avgStyles.percentBadge}>
-          <Target size={11} color={palette.gray600} />
-          <Text style={avgStyles.percentText}>{percent}% of goal</Text>
-        </View>
-      )}
     </Card>
   );
 }
@@ -384,13 +414,19 @@ function BestDayCard({
   color: string;
 }) {
   return (
-    <Card style={bestStyles.card}>
-      <Text style={bestStyles.label}>{label}</Text>
+    <Card compact style={bestStyles.card}>
+      <Text style={bestStyles.label} numberOfLines={1}>
+        {label}
+      </Text>
       <View style={bestStyles.valueRow}>
-        <Text style={[bestStyles.value, { color }]}>{value}</Text>
+        <Text style={[bestStyles.value, { color }]} numberOfLines={1} adjustsFontSizeToFit>
+          {value}
+        </Text>
         <Text style={bestStyles.unit}>{unit}</Text>
       </View>
-      <Text style={bestStyles.date}>{formatShortDate(date)}</Text>
+      <Text style={bestStyles.date} numberOfLines={1}>
+        {formatShortDate(date)}
+      </Text>
     </Card>
   );
 }
@@ -413,7 +449,7 @@ function GoalBar({
   label: string;
   percent: number;
   raw: number;
-  gradient: readonly [string, string];
+  gradient: Gradient;
 }) {
   return (
     <View style={goalStyles.container}>
@@ -421,7 +457,7 @@ function GoalBar({
         <Text style={goalStyles.label}>{label}</Text>
         <Text style={goalStyles.percent}>{raw}%</Text>
       </View>
-      <ProgressBar percentage={percent} height={7} gradient={gradient} />
+      <ProgressBar percentage={percent} height={6} gradient={gradient} />
     </View>
   );
 }
@@ -430,53 +466,37 @@ const avgStyles = StyleSheet.create({
   card: {
     width: '48.4%',
     gap: spacing.sm,
-    padding: spacing.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textMuted,
-    flex: 1,
+    gap: spacing.sm,
   },
   iconBox: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: layout.iconTile.sm,
+    height: layout.iconTile.sm,
+    borderRadius: radius.xs,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  title: {
+    ...typography.caption,
+    flex: 1,
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 4,
+    gap: spacing.xs,
   },
   value: {
-    fontSize: 21,
-    fontWeight: '800',
+    ...typography.numberMd,
   },
   unit: {
-    fontSize: 12,
-    color: colors.textMuted,
-  },
-  percentBadge: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    backgroundColor: palette.gray100,
-    alignSelf: 'flex-start',
-    borderRadius: radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
+    ...typography.caption,
   },
   percentText: {
-    fontSize: 11,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.micro,
+    marginLeft: 'auto',
   },
 });
 
@@ -484,30 +504,25 @@ const bestStyles = StyleSheet.create({
   card: {
     flex: 1,
     alignItems: 'center',
-    padding: spacing.md,
-    gap: 2,
+    gap: spacing.xxs,
   },
   label: {
-    fontSize: 11.5,
-    fontWeight: '600',
+    ...typography.captionStrong,
     color: colors.textMuted,
   },
   valueRow: {
     flexDirection: 'row',
     alignItems: 'baseline',
-    gap: 2,
+    gap: spacing.xxs,
   },
   value: {
-    fontSize: 18,
-    fontWeight: '800',
+    ...typography.numberMd,
   },
   unit: {
-    fontSize: 11,
-    color: colors.textMuted,
+    ...typography.micro,
   },
   date: {
-    fontSize: 11,
-    color: colors.textFaint,
+    ...typography.micro,
   },
 });
 
@@ -515,22 +530,20 @@ const insightStyles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
   },
   label: {
-    fontSize: 13.5,
-    color: colors.textSecondary,
+    ...typography.label,
   },
   value: {
-    fontSize: 13.5,
-    fontWeight: '700',
+    ...typography.labelStrong,
     color: colors.text,
   },
 });
 
 const goalStyles = StyleSheet.create({
   container: {
-    gap: 5,
+    gap: spacing.xs,
     marginTop: spacing.sm,
   },
   labelRow: {
@@ -538,46 +551,35 @@ const goalStyles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   label: {
-    fontSize: 13,
+    ...typography.caption,
     color: colors.textSecondary,
   },
   percent: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.captionStrong,
     color: colors.text,
   },
 });
 
 const styles = StyleSheet.create({
-  header: {
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: 13.5,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
   periodRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   periodChip: {
     flex: 1,
+  },
+  loadingList: {
+    gap: spacing.md,
   },
   grid2: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   streakCard: {
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   streakRow: {
     flexDirection: 'row',
@@ -588,56 +590,49 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderRadius: radius.md,
     paddingVertical: spacing.md,
-    gap: 1,
   },
   streakValueRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: spacing.xs,
   },
   streakValue: {
-    fontSize: 22,
-    fontWeight: '800',
+    ...typography.numberLg,
   },
   streakLabel: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.captionStrong,
   },
   streakUnit: {
-    fontSize: 11,
-    color: colors.textMuted,
+    ...typography.micro,
   },
   bestRow: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   chartList: {
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   insightsCard: {
     marginBottom: spacing.lg,
   },
   insightRows: {
-    marginBottom: spacing.md,
+    marginBottom: spacing.sm,
   },
   goalBlock: {
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopWidth: layout.hairline,
+    borderTopColor: colors.divider,
     paddingTop: spacing.md,
-    gap: 4,
+    gap: spacing.xs,
   },
   goalHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
-    marginBottom: 4,
+    gap: spacing.sm,
+    marginBottom: spacing.xs,
   },
   goalTitle: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.labelStrong,
   },
 });

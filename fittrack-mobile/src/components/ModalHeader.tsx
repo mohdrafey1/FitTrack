@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { X } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 
-import { colors, palette, spacing } from '@/constants/theme';
+import { PressableScale } from '@/components/PressableScale';
+import { colors, layout, radius, spacing, typography } from '@/constants/theme';
 
 interface ModalHeaderProps {
   title: string;
@@ -19,19 +20,20 @@ export function ModalHeader({ title, subtitle, right }: ModalHeaderProps) {
   return (
     <View style={styles.row}>
       <View style={styles.titleGroup}>
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
         {!!subtitle && <Text style={styles.subtitle}>{subtitle}</Text>}
       </View>
       <View style={styles.actions}>
         {right}
-        <Pressable
+        <PressableScale
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-          hitSlop={10}
-          accessibilityRole="button"
+          hitSlop={layout.hitSlop}
           accessibilityLabel="Close"
-          style={({ pressed }) => [styles.closeButton, pressed && { opacity: 0.7 }]}>
-          <X size={20} color={palette.gray600} />
-        </Pressable>
+          style={styles.closeButton}>
+          <X size={layout.icon.lg} color={colors.textSecondary} />
+        </PressableScale>
       </View>
     </View>
   );
@@ -42,20 +44,17 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   titleGroup: {
     flex: 1,
-    gap: 2,
+    gap: spacing.xxs,
   },
   title: {
-    fontSize: 21,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.title,
   },
   subtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
+    ...typography.caption,
   },
   actions: {
     flexDirection: 'row',
@@ -63,10 +62,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   closeButton: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: palette.gray100,
+    width: layout.iconButton,
+    height: layout.iconButton,
+    borderRadius: radius.full,
+    backgroundColor: colors.fill,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -1,7 +1,15 @@
 import React, { useEffect } from 'react';
-import { Animated, StyleSheet, useAnimatedValue, type DimensionValue } from 'react-native';
+import { StyleSheet, type DimensionValue } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useReducedMotion,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { palette, radius } from '@/constants/theme';
+import { colors, motion, radius } from '@/constants/theme';
 
 interface SkeletonProps {
   height?: number;
@@ -10,23 +18,31 @@ interface SkeletonProps {
 }
 
 /** Pulsing placeholder block for loading states. */
-export function Skeleton({ height = 16, width = '100%', borderRadius = radius.sm }: SkeletonProps) {
-  const pulse = useAnimatedValue(0.4);
+export function Skeleton({ height = 14, width = '100%', borderRadius = radius.sm }: SkeletonProps) {
+  const pulse = useSharedValue(0.45);
+  const reduceMotion = useReducedMotion();
 
   useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 700, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.4, duration: 700, useNativeDriver: true }),
-      ])
+    if (reduceMotion) {
+      pulse.value = 0.7;
+      return;
+    }
+    pulse.value = withRepeat(
+      withTiming(1, {
+        duration: motion.duration.pulse,
+        easing: motion.easing.inOut,
+        reduceMotion: ReduceMotion.System,
+      }),
+      -1,
+      true
     );
-    loop.start();
-    return () => loop.stop();
-  }, [pulse]);
+  }, [pulse, reduceMotion]);
+
+  const animatedStyle = useAnimatedStyle(() => ({ opacity: pulse.value }));
 
   return (
     <Animated.View
-      style={[styles.base, { height, width, borderRadius, opacity: pulse }]}
+      style={[styles.base, { height, width, borderRadius }, animatedStyle]}
       accessibilityElementsHidden
     />
   );
@@ -34,6 +50,6 @@ export function Skeleton({ height = 16, width = '100%', borderRadius = radius.sm
 
 const styles = StyleSheet.create({
   base: {
-    backgroundColor: palette.gray200,
+    backgroundColor: colors.skeleton,
   },
 });

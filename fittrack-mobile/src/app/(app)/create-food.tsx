@@ -11,9 +11,10 @@ import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
 import { ModalHeader } from '@/components/ModalHeader';
 import { Screen } from '@/components/Screen';
-import { colors, gradients, palette, spacing } from '@/constants/theme';
+import { gradients, palette, spacing, typography } from '@/constants/theme';
 import { useToast } from '@/context/ToastContext';
 import type { CategoryOption, FoodCategory } from '@/types/api';
+import { haptics } from '@/utils/haptics';
 
 /** Fallback if the categories endpoint is unreachable (matches the backend list). */
 const DEFAULT_CATEGORIES: CategoryOption[] = [
@@ -138,6 +139,7 @@ export default function CreateFoodScreen() {
           large: parseFloat(form.large),
         },
       });
+      haptics.success();
       showToast(`${form.name.trim()} created`);
       router.back();
     } catch (error) {
@@ -292,14 +294,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 15.5,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.heading,
   },
   fieldLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    ...typography.labelStrong,
     marginBottom: spacing.sm,
   },
   chipWrap: {

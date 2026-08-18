@@ -16,15 +16,8 @@ import {
   UtensilsCrossed,
 } from 'lucide-react-native';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import {
-  Alert,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  Text,
-  View,
-} from 'react-native';
+import { Alert, Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { getApiErrorMessage } from '@/api/client';
 import { foodApi } from '@/api/food';
@@ -32,16 +25,21 @@ import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { EmptyState } from '@/components/EmptyState';
 import { Input } from '@/components/Input';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
+import { ScreenTitle } from '@/components/ScreenTitle';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Skeleton } from '@/components/Skeleton';
 import {
   colors,
   gradients,
+  layout,
+  motion,
   palette,
   progressGradient,
   radius,
   spacing,
+  typography,
   type Gradient,
 } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -55,6 +53,8 @@ import {
   shiftUTCDate,
 } from '@/utils/date';
 import { formatWater, progressPercent, rawPercent } from '@/utils/format';
+import { haptics } from '@/utils/haptics';
+import { enter } from '@/utils/motion';
 
 const RANGE_OPTIONS = [3, 7, 14, 30] as const;
 const QUICK_WATER = [250, 500, 750, 1000] as const;
@@ -158,6 +158,7 @@ export default function HistoryScreen() {
     try {
       const entry = await foodApi.updateWater(amount);
       applyUpdatedEntry(entry);
+      haptics.light();
     } catch (error) {
       showToast(getApiErrorMessage(error, 'Failed to update water'), 'error');
     } finally {
@@ -172,6 +173,7 @@ export default function HistoryScreen() {
         text: 'Remove',
         style: 'destructive',
         onPress: async () => {
+          haptics.warning();
           try {
             const entry = await foodApi.removeFood(food._id);
             applyUpdatedEntry(entry);
@@ -212,83 +214,87 @@ export default function HistoryScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Food History</Text>
-        <Text style={styles.subtitle}>Track your nutrition journey</Text>
-      </View>
+      <Animated.View entering={enter(0)}>
+        <ScreenTitle title="Food History" subtitle="Track your nutrition journey" />
 
-      {/* Recent days strip */}
-      <SectionHeader
-        title="Recent Days"
-        icon={CalendarDays}
-        right={
-          <View style={styles.rangeRow}>
-            {RANGE_OPTIONS.map((option) => (
-              <Pressable
-                key={option}
-                onPress={() => setRange(option)}
-                accessibilityRole="button"
-                accessibilityState={{ selected: range === option }}
-                style={[styles.rangePill, range === option && styles.rangePillActive]}>
-                <Text
-                  style={[styles.rangeText, range === option && styles.rangeTextActive]}>
-                  {option}d
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        }
-      />
+        {/* Recent days strip */}
+        <SectionHeader
+          title="Recent Days"
+          icon={CalendarDays}
+          right={
+            <View style={styles.rangeRow}>
+              {RANGE_OPTIONS.map((option) => (
+                <PressableScale
+                  key={option}
+                  onPress={() => setRange(option)}
+                  haptic="selection"
+                  hitSlop={spacing.sm}
+                  accessibilityLabel={`Show last ${option} days`}
+                  accessibilityState={{ selected: range === option }}
+                  style={[styles.rangePill, range === option && styles.rangePillActive]}>
+                  <Text style={[styles.rangeText, range === option && styles.rangeTextActive]}>
+                    {option}d
+                  </Text>
+                </PressableScale>
+              ))}
+            </View>
+          }
+        />
+      </Animated.View>
 
       {entriesLoading ? (
         <View style={styles.dayStripSkeleton}>
           {[0, 1, 2].map((i) => (
-            <Skeleton key={i} height={92} width={132} borderRadius={radius.lg} />
+            <Skeleton key={i} height={78} width={124} borderRadius={radius.lg} />
           ))}
         </View>
       ) : entries.length > 0 ? (
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.dayStripScroll}
-          contentContainerStyle={styles.dayStrip}>
-          {entries.map((entry) => {
-            const dateKey = entry.date.split('T')[0];
-            const selected = dateKey === selectedDate;
-            return (
-              <Pressable
-                key={entry._id}
-                onPress={() => selectDate(dateKey)}
-                accessibilityRole="button"
-                accessibilityState={{ selected }}
-                style={[styles.dayCard, selected && styles.dayCardSelected]}>
-                <View style={styles.dayCardHeader}>
-                  <Text style={[styles.dayCardDate, selected && { color: palette.indigo600 }]}>
-                    {formatDisplayDate(dateKey)}
-                  </Text>
-                  <View style={styles.dayCardCount}>
-                    <UtensilsCrossed size={11} color={palette.gray500} />
-                    <Text style={styles.dayCardCountText}>{entry.foods.length}</Text>
+        <Animated.View entering={enter(1)}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.dayStripScroll}
+            contentContainerStyle={styles.dayStrip}>
+            {entries.map((entry) => {
+              const dateKey = entry.date.split('T')[0];
+              const selected = dateKey === selectedDate;
+              return (
+                <PressableScale
+                  key={entry._id}
+                  onPress={() => selectDate(dateKey)}
+                  haptic="selection"
+                  accessibilityLabel={`Show ${formatDisplayDate(dateKey)}`}
+                  accessibilityState={{ selected }}
+                  style={[styles.dayCard, selected && styles.dayCardSelected]}>
+                  <View style={styles.dayCardHeader}>
+                    <Text style={[styles.dayCardDate, selected && styles.dayCardDateSelected]}>
+                      {formatDisplayDate(dateKey)}
+                    </Text>
+                    <View style={styles.dayCardCount}>
+                      <UtensilsCrossed size={layout.icon.xs} color={colors.textFaint} />
+                      <Text style={styles.dayCardCountText}>{entry.foods.length}</Text>
+                    </View>
                   </View>
-                </View>
-                <View style={styles.dayCardBadges}>
-                  <MiniBadge
-                    label="Cal"
-                    percent={progressPercent(entry.totalCalories, targets.calories)}
-                  />
-                  <MiniBadge
-                    label="Pro"
-                    percent={progressPercent(entry.totalProtein, targets.protein)}
-                  />
-                  <MiniBadge label="H₂O" percent={progressPercent(entry.water, targets.water)} />
-                </View>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
+                  <View style={styles.dayCardBadges}>
+                    <MiniBadge
+                      label="Cal"
+                      percent={progressPercent(entry.totalCalories, targets.calories)}
+                    />
+                    <MiniBadge
+                      label="Pro"
+                      percent={progressPercent(entry.totalProtein, targets.protein)}
+                    />
+                    <MiniBadge label="H₂O" percent={progressPercent(entry.water, targets.water)} />
+                  </View>
+                </PressableScale>
+              );
+            })}
+          </ScrollView>
+        </Animated.View>
       ) : (
-        <Card style={{ marginBottom: spacing.xl }}>
+        <Card style={styles.emptyDaysCard}>
           <EmptyState
+            compact
             icon={CalendarDays}
             title="No entries found"
             message="Days you log food or water will appear here."
@@ -297,194 +303,201 @@ export default function HistoryScreen() {
       )}
 
       {/* Selected day */}
-      <Card style={styles.selectedDayCard}>
-        <View style={styles.dateNav}>
-          <Pressable
-            onPress={() => selectDate(shiftUTCDate(selectedDate, -1))}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Previous day"
-            style={styles.dateNavButton}>
-            <ChevronLeft size={20} color={palette.gray600} />
-          </Pressable>
-          <Pressable
-            onPress={() => setShowDatePicker(true)}
-            accessibilityRole="button"
-            accessibilityLabel="Pick a date"
-            style={styles.dateNavLabel}>
-            <CalendarDays size={16} color={palette.indigo600} />
-            <Text style={styles.dateNavText}>
-              {isToday ? 'Today' : formatDisplayDate(selectedDate)}
-            </Text>
-          </Pressable>
-          <Pressable
-            onPress={() => selectDate(shiftUTCDate(selectedDate, 1))}
-            disabled={isToday}
-            hitSlop={8}
-            accessibilityRole="button"
-            accessibilityLabel="Next day"
-            style={[styles.dateNavButton, isToday && { opacity: 0.3 }]}>
-            <ChevronRight size={20} color={palette.gray600} />
-          </Pressable>
-        </View>
-
-        {showDatePicker && (
-          <DateTimePicker
-            value={new Date(`${selectedDate}T12:00:00`)}
-            mode="date"
-            display={Platform.OS === 'ios' ? 'inline' : 'default'}
-            maximumDate={new Date()}
-            onChange={(event, date) => {
-              if (Platform.OS === 'ios') setShowDatePicker(false);
-              handleDatePicked(event, date);
-            }}
-            themeVariant="light"
-          />
-        )}
-
-        {entryLoading ? (
-          <View style={styles.summaryRow}>
-            {[0, 1, 2].map((i) => (
-              <Skeleton key={i} height={96} width="31%" borderRadius={radius.md} />
-            ))}
+      <Animated.View entering={enter(2)}>
+        <Card style={styles.selectedDayCard}>
+          <View style={styles.dateNav}>
+            <PressableScale
+              onPress={() => selectDate(shiftUTCDate(selectedDate, -1))}
+              haptic="selection"
+              hitSlop={layout.hitSlop}
+              accessibilityLabel="Previous day"
+              style={styles.dateNavButton}>
+              <ChevronLeft size={layout.icon.lg} color={colors.textSecondary} />
+            </PressableScale>
+            <PressableScale
+              onPress={() => setShowDatePicker(true)}
+              haptic="selection"
+              accessibilityLabel="Pick a date"
+              style={styles.dateNavLabel}>
+              <CalendarDays size={layout.icon.md} color={palette.indigo600} />
+              <Text style={styles.dateNavText}>
+                {isToday ? 'Today' : formatDisplayDate(selectedDate)}
+              </Text>
+            </PressableScale>
+            <PressableScale
+              onPress={() => selectDate(shiftUTCDate(selectedDate, 1))}
+              disabled={isToday}
+              haptic="selection"
+              hitSlop={layout.hitSlop}
+              accessibilityLabel="Next day"
+              style={[styles.dateNavButton, isToday && styles.dateNavButtonDisabled]}>
+              <ChevronRight size={layout.icon.lg} color={colors.textSecondary} />
+            </PressableScale>
           </View>
-        ) : selectedEntry ? (
-          <View style={styles.summaryRow}>
-            <SummaryTile
-              icon={Flame}
-              gradient={gradients.calories}
-              value={`${selectedEntry.totalCalories}`}
-              label="Calories"
-              percentLabel={`${rawPercent(selectedEntry.totalCalories, targets.calories)}% of goal`}
+
+          {showDatePicker && (
+            <DateTimePicker
+              value={new Date(`${selectedDate}T12:00:00`)}
+              mode="date"
+              display={Platform.OS === 'ios' ? 'inline' : 'default'}
+              maximumDate={new Date()}
+              onChange={(event, date) => {
+                if (Platform.OS === 'ios') setShowDatePicker(false);
+                handleDatePicked(event, date);
+              }}
+              themeVariant="light"
             />
-            <SummaryTile
-              icon={Beef}
-              gradient={gradients.protein}
-              value={`${selectedEntry.totalProtein}g`}
-              label="Protein"
-              percentLabel={`${rawPercent(selectedEntry.totalProtein, targets.protein)}% of goal`}
-            />
-            <SummaryTile
-              icon={Droplets}
-              gradient={gradients.water}
-              value={formatWater(selectedEntry.water)}
-              label="Water"
-              percentLabel={`${rawPercent(selectedEntry.water, targets.water)}% of goal`}
-            />
-          </View>
-        ) : (
-          <Text style={styles.errorText}>{"Couldn't load this day. Pull to refresh."}</Text>
-        )}
-      </Card>
+          )}
+
+          {entryLoading ? (
+            <View style={styles.summaryRow}>
+              {[0, 1, 2].map((i) => (
+                <Skeleton key={i} height={78} width="31%" borderRadius={radius.md} />
+              ))}
+            </View>
+          ) : selectedEntry ? (
+            <View style={styles.summaryRow}>
+              <SummaryTile
+                icon={Flame}
+                gradient={gradients.calories}
+                value={`${selectedEntry.totalCalories}`}
+                label="Calories"
+                percentLabel={`${rawPercent(selectedEntry.totalCalories, targets.calories)}% of goal`}
+              />
+              <SummaryTile
+                icon={Beef}
+                gradient={gradients.protein}
+                value={`${selectedEntry.totalProtein}g`}
+                label="Protein"
+                percentLabel={`${rawPercent(selectedEntry.totalProtein, targets.protein)}% of goal`}
+              />
+              <SummaryTile
+                icon={Droplets}
+                gradient={gradients.water}
+                value={formatWater(selectedEntry.water)}
+                label="Water"
+                percentLabel={`${rawPercent(selectedEntry.water, targets.water)}% of goal`}
+              />
+            </View>
+          ) : (
+            <Text style={styles.errorText}>{"Couldn't load this day. Pull to refresh."}</Text>
+          )}
+        </Card>
+      </Animated.View>
 
       {/* Water tracker (today only — backend only mutates today's entry) */}
       {isToday && selectedEntry && (
-        <Card style={styles.waterCard}>
-          <SectionHeader title="Water Tracker" icon={Droplets} iconColor={palette.blue600} />
-          <View style={styles.waterQuickRow}>
-            {QUICK_WATER.map((amount) => (
-              <Chip
-                key={amount}
-                label={`+${amount}`}
-                sublabel="ml"
-                selected={false}
-                onPress={() => handleWaterChange(amount)}
-                style={styles.waterChip}
-              />
-            ))}
-          </View>
-          <View style={styles.waterStepperRow}>
-            <Pressable
-              onPress={() => handleWaterChange(-250)}
-              disabled={waterBusy || (selectedEntry.water ?? 0) < 250}
-              accessibilityRole="button"
-              accessibilityLabel="Remove 250 ml"
-              style={[
-                styles.stepperButton,
-                styles.stepperMinus,
-                ((selectedEntry.water ?? 0) < 250 || waterBusy) && { opacity: 0.4 },
-              ]}>
-              <Text style={styles.stepperMinusText}>−250ml</Text>
-            </Pressable>
-            <Pressable
-              onPress={() => handleWaterChange(250)}
-              disabled={waterBusy}
-              accessibilityRole="button"
-              accessibilityLabel="Add 250 ml"
-              style={[styles.stepperButton, styles.stepperPlus, waterBusy && { opacity: 0.6 }]}>
-              <Text style={styles.stepperPlusText}>+250ml</Text>
-            </Pressable>
-          </View>
-        </Card>
+        <Animated.View entering={enter(3)}>
+          <Card style={styles.waterCard}>
+            <SectionHeader title="Water Tracker" icon={Droplets} iconColor={palette.blue600} />
+            <View style={styles.waterQuickRow}>
+              {QUICK_WATER.map((amount) => (
+                <Chip
+                  key={amount}
+                  label={`+${amount}`}
+                  sublabel="ml"
+                  selected={false}
+                  onPress={() => handleWaterChange(amount)}
+                  style={styles.waterChip}
+                />
+              ))}
+            </View>
+            <View style={styles.waterStepperRow}>
+              <PressableScale
+                onPress={() => handleWaterChange(-250)}
+                disabled={waterBusy || (selectedEntry.water ?? 0) < 250}
+                haptic="none"
+                accessibilityLabel="Remove 250 ml"
+                style={[
+                  styles.stepperButton,
+                  styles.stepperMinus,
+                  ((selectedEntry.water ?? 0) < 250 || waterBusy) && styles.stepperDisabled,
+                ]}>
+                <Text style={styles.stepperMinusText}>−250ml</Text>
+              </PressableScale>
+              <PressableScale
+                onPress={() => handleWaterChange(250)}
+                disabled={waterBusy}
+                haptic="none"
+                accessibilityLabel="Add 250 ml"
+                style={[styles.stepperButton, styles.stepperPlus, waterBusy && styles.stepperBusy]}>
+                <Text style={styles.stepperPlusText}>+250ml</Text>
+              </PressableScale>
+            </View>
+          </Card>
+        </Animated.View>
       )}
 
       {/* Food list */}
-      <Card style={styles.foodsCard}>
-        <SectionHeader title="Food Items" icon={UtensilsCrossed} />
-        {!!selectedEntry?.foods.length && (
-          <Input
-            value={searchTerm}
-            onChangeText={setSearchTerm}
-            placeholder="Search foods..."
-            containerStyle={{ marginBottom: spacing.md }}
-          />
-        )}
+      <Animated.View entering={enter(4)}>
+        <Card style={styles.foodsCard}>
+          <SectionHeader title="Food Items" icon={UtensilsCrossed} />
+          {!!selectedEntry?.foods.length && (
+            <Input
+              value={searchTerm}
+              onChangeText={setSearchTerm}
+              placeholder="Search foods..."
+              containerStyle={styles.searchField}
+            />
+          )}
 
-        {entryLoading ? (
-          <View style={{ gap: spacing.md }}>
-            <Skeleton height={56} />
-            <Skeleton height={56} />
-          </View>
-        ) : filteredFoods.length > 0 ? (
-          filteredFoods.map((food, index) => (
-            <View key={food._id} style={[styles.foodRow, index > 0 && styles.foodRowBorder]}>
-              <View style={styles.foodInfo}>
-                <Text style={styles.foodName} numberOfLines={1}>
-                  {food.foodName}
-                </Text>
-                <View style={styles.foodMetaRow}>
-                  <Clock size={12} color={palette.gray400} />
-                  <Text style={styles.foodMeta}>
-                    {formatTime(food.timestamp)} • {food.servingSize || `${food.quantity}g`}
-                  </Text>
-                </View>
-                <View style={styles.foodMacros}>
-                  <Text style={styles.foodMacro}>
-                    <Text style={{ color: palette.orange500 }}>●</Text> {food.calories} cal
-                  </Text>
-                  <Text style={styles.foodMacro}>
-                    <Text style={{ color: palette.red500 }}>●</Text> {food.protein}g protein
-                  </Text>
-                  <Text style={styles.foodMacroFaint}>C {food.carbs}g</Text>
-                  <Text style={styles.foodMacroFaint}>F {food.fat}g</Text>
-                </View>
-              </View>
-              {isToday && (
-                <Pressable
-                  onPress={() => confirmDeleteFood(food)}
-                  hitSlop={8}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Remove ${food.foodName}`}
-                  style={({ pressed }) => [styles.foodDelete, pressed && { opacity: 0.6 }]}>
-                  <Trash2 size={17} color={palette.red500} />
-                </Pressable>
-              )}
+          {entryLoading ? (
+            <View style={styles.foodsLoading}>
+              <Skeleton height={44} />
+              <Skeleton height={44} />
             </View>
-          ))
-        ) : (
-          <EmptyState
-            icon={searchTerm ? Search : CalendarDays}
-            title={searchTerm ? 'No foods match your search' : 'Nothing logged this day'}
-            message={
-              searchTerm
-                ? 'Try a different search term.'
-                : isToday
-                  ? 'Use “Add Food” on the dashboard to log a meal.'
-                  : 'No food items were recorded on this date.'
-            }
-          />
-        )}
-      </Card>
+          ) : filteredFoods.length > 0 ? (
+            filteredFoods.map((food, index) => (
+              <Animated.View
+                key={food._id}
+                entering={FadeIn.duration(motion.duration.base)}
+                exiting={FadeOut.duration(motion.duration.fast)}
+                layout={LinearTransition.duration(motion.duration.base)}
+                style={[styles.foodRow, index > 0 && styles.foodRowBorder]}>
+                <View style={styles.foodInfo}>
+                  <Text style={styles.foodName} numberOfLines={1}>
+                    {food.foodName}
+                  </Text>
+                  <View style={styles.foodMetaRow}>
+                    <Clock size={layout.icon.xs} color={colors.textFaint} />
+                    <Text style={styles.foodMeta} numberOfLines={1}>
+                      {formatTime(food.timestamp)} · {food.servingSize || `${food.quantity}g`} · P{' '}
+                      {food.protein}g · C {food.carbs}g · F {food.fat}g
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.foodCalories}>
+                  <Flame size={layout.icon.sm} color={palette.orange500} />
+                  <Text style={styles.foodCaloriesValue}>{food.calories}</Text>
+                </View>
+                {isToday && (
+                  <PressableScale
+                    onPress={() => confirmDeleteFood(food)}
+                    hitSlop={layout.hitSlop}
+                    haptic="none"
+                    accessibilityLabel={`Remove ${food.foodName}`}
+                    style={styles.foodDelete}>
+                    <Trash2 size={layout.icon.md} color={colors.textFaint} />
+                  </PressableScale>
+                )}
+              </Animated.View>
+            ))
+          ) : (
+            <EmptyState
+              compact
+              icon={searchTerm ? Search : CalendarDays}
+              title={searchTerm ? 'No foods match your search' : 'Nothing logged this day'}
+              message={
+                searchTerm
+                  ? 'Try a different search term.'
+                  : isToday
+                    ? 'Use “Add Food” on the dashboard to log a meal.'
+                    : 'No food items were recorded on this date.'
+              }
+            />
+          )}
+        </Card>
+      </Animated.View>
     </Screen>
   );
 }
@@ -524,12 +537,16 @@ function SummaryTile({
       start={{ x: 0, y: 0 }}
       end={{ x: 1, y: 1 }}
       style={summaryStyles.tile}>
-      <Icon size={20} color={palette.white} />
+      <Icon size={layout.icon.md} color={colors.onGradient} strokeWidth={layout.strokeWidth} />
       <Text style={summaryStyles.value} numberOfLines={1} adjustsFontSizeToFit>
         {value}
       </Text>
-      <Text style={summaryStyles.label}>{label}</Text>
-      <Text style={summaryStyles.percent}>{percentLabel}</Text>
+      <Text style={summaryStyles.label} numberOfLines={1}>
+        {label}
+      </Text>
+      <Text style={summaryStyles.percent} numberOfLines={1}>
+        {percentLabel}
+      </Text>
     </LinearGradient>
   );
 }
@@ -538,23 +555,22 @@ const miniBadgeStyles = StyleSheet.create({
   container: {
     flex: 1,
     alignItems: 'center',
-    gap: 3,
+    gap: spacing.xxs,
   },
   badge: {
-    borderRadius: radius.sm,
-    paddingVertical: 3,
-    paddingHorizontal: 6,
-    minWidth: 38,
+    borderRadius: radius.xs,
+    paddingVertical: spacing.xxs,
+    paddingHorizontal: spacing.xs,
+    minWidth: 34,
     alignItems: 'center',
   },
   value: {
-    color: palette.white,
-    fontSize: 11,
+    ...typography.micro,
     fontWeight: '700',
+    color: colors.onGradient,
   },
   label: {
-    fontSize: 10.5,
-    color: palette.gray500,
+    ...typography.micro,
   },
 });
 
@@ -564,47 +580,33 @@ const summaryStyles = StyleSheet.create({
     borderRadius: radius.md,
     padding: spacing.md,
     alignItems: 'center',
-    gap: 2,
+    gap: spacing.xxs,
   },
   value: {
-    color: palette.white,
-    fontSize: 19,
-    fontWeight: '800',
+    ...typography.numberMd,
+    color: colors.onGradient,
   },
   label: {
-    color: 'rgba(255,255,255,0.9)',
-    fontSize: 12,
+    ...typography.caption,
+    color: colors.onGradientMuted,
   },
   percent: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 10.5,
+    ...typography.micro,
+    color: colors.onGradientFaint,
   },
 });
 
 const styles = StyleSheet.create({
-  header: {
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: 13.5,
-    color: colors.textMuted,
-    marginTop: 2,
-  },
   rangeRow: {
     flexDirection: 'row',
-    gap: 4,
+    gap: spacing.xs,
   },
   rangePill: {
-    paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
-    backgroundColor: palette.white,
-    borderWidth: 1,
+    backgroundColor: colors.card,
+    borderWidth: layout.border,
     borderColor: colors.divider,
   },
   rangePillActive: {
@@ -612,17 +614,15 @@ const styles = StyleSheet.create({
     borderColor: palette.indigo600,
   },
   rangeText: {
-    fontSize: 12,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.captionStrong,
   },
   rangeTextActive: {
-    color: palette.white,
+    color: colors.onGradient,
   },
   dayStripSkeleton: {
     flexDirection: 'row',
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   dayStripScroll: {
     marginBottom: spacing.lg,
@@ -632,10 +632,10 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.xs,
   },
   dayCard: {
-    width: 148,
-    backgroundColor: palette.white,
+    width: 132,
+    backgroundColor: colors.card,
     borderRadius: radius.lg,
-    borderWidth: 2,
+    borderWidth: layout.border,
     borderColor: colors.divider,
     padding: spacing.md,
     gap: spacing.sm,
@@ -650,25 +650,31 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dayCardDate: {
-    fontSize: 13,
-    fontWeight: '700',
+    ...typography.captionStrong,
     color: colors.text,
+    fontWeight: '700',
+  },
+  dayCardDateSelected: {
+    color: palette.indigo600,
   },
   dayCardCount: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 3,
+    gap: spacing.xxs,
   },
   dayCardCountText: {
-    fontSize: 11.5,
-    color: palette.gray500,
+    ...typography.micro,
+    color: colors.textMuted,
   },
   dayCardBadges: {
     flexDirection: 'row',
-    gap: 6,
+    gap: spacing.xs,
+  },
+  emptyDaysCard: {
+    marginBottom: spacing.lg,
   },
   selectedDayCard: {
-    gap: spacing.lg,
+    gap: spacing.md,
     marginBottom: spacing.lg,
   },
   dateNav: {
@@ -677,12 +683,15 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   dateNavButton: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
-    backgroundColor: palette.gray100,
+    width: layout.iconButton,
+    height: layout.iconButton,
+    borderRadius: radius.full,
+    backgroundColor: colors.fill,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  dateNavButtonDisabled: {
+    opacity: 0.3,
   },
   dateNavLabel: {
     flexDirection: 'row',
@@ -692,9 +701,10 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     backgroundColor: palette.indigo50,
+    minHeight: layout.iconButton,
   },
   dateNavText: {
-    fontSize: 15,
+    ...typography.bodyStrong,
     fontWeight: '700',
     color: palette.indigo700,
   },
@@ -703,8 +713,7 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   errorText: {
-    fontSize: 13.5,
-    color: colors.textMuted,
+    ...typography.caption,
     textAlign: 'center',
     paddingVertical: spacing.md,
   },
@@ -726,75 +735,82 @@ const styles = StyleSheet.create({
   stepperButton: {
     flex: 1,
     alignItems: 'center',
-    paddingVertical: 11,
+    justifyContent: 'center',
+    minHeight: layout.tapTarget,
     borderRadius: radius.md,
+    borderWidth: layout.border,
+  },
+  stepperDisabled: {
+    opacity: 0.4,
+  },
+  stepperBusy: {
+    opacity: 0.6,
   },
   stepperMinus: {
     backgroundColor: colors.dangerBg,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderColor: colors.dangerBorder,
   },
   stepperMinusText: {
-    color: palette.red600,
+    ...typography.bodyStrong,
     fontWeight: '700',
-    fontSize: 14,
+    color: colors.danger,
   },
   stepperPlus: {
-    backgroundColor: palette.emerald100,
-    borderWidth: 1,
-    borderColor: '#A7F3D0',
+    backgroundColor: colors.successBg,
+    borderColor: colors.successBorder,
   },
   stepperPlusText: {
-    color: palette.emerald600,
+    ...typography.bodyStrong,
     fontWeight: '700',
-    fontSize: 14,
+    color: colors.success,
   },
   foodsCard: {
     marginBottom: spacing.lg,
   },
+  searchField: {
+    marginBottom: spacing.md,
+  },
+  foodsLoading: {
+    gap: spacing.md,
+  },
   foodRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    gap: spacing.sm,
     paddingVertical: spacing.md,
+    minHeight: layout.tapTarget,
   },
   foodRowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopWidth: layout.hairline,
+    borderTopColor: colors.divider,
   },
   foodInfo: {
     flex: 1,
-    gap: 3,
   },
   foodName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.bodyStrong,
   },
   foodMetaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
   },
   foodMeta: {
-    fontSize: 12.5,
-    color: colors.textMuted,
+    ...typography.caption,
+    flex: 1,
   },
-  foodMacros: {
+  foodCalories: {
     flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: spacing.md,
-    marginTop: 2,
+    alignItems: 'center',
+    gap: spacing.xs,
   },
-  foodMacro: {
-    fontSize: 12.5,
-    fontWeight: '500',
-    color: colors.textSecondary,
-  },
-  foodMacroFaint: {
-    fontSize: 12.5,
-    color: colors.textMuted,
+  foodCaloriesValue: {
+    ...typography.numberSm,
   },
   foodDelete: {
-    padding: spacing.sm,
+    width: layout.iconTile.sm,
+    height: layout.iconTile.sm,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

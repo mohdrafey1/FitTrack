@@ -10,7 +10,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { colors, palette, spacing } from '@/constants/theme';
+import { colors, layout, spacing } from '@/constants/theme';
 
 interface ScreenProps {
   children: React.ReactNode;
@@ -55,8 +55,8 @@ export function Screen({
           <RefreshControl
             refreshing={!!refreshing}
             onRefresh={onRefresh}
-            tintColor={palette.blue600}
-            colors={[palette.blue600]}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
             progressViewOffset={padTop ? insets.top : 0}
           />
         ) : undefined
@@ -102,6 +102,6 @@ export function Screen({
 const styles = StyleSheet.create({
   flex: { flex: 1 },
   content: {
-    paddingHorizontal: spacing.lg,
+    paddingHorizontal: layout.screenPadding,
   },
 });

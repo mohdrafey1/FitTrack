@@ -8,10 +8,17 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Animated, Platform, StyleSheet, Text, useAnimatedValue } from 'react-native';
+import { Platform, StyleSheet, Text } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+  withTiming,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { palette, radius, spacing } from '@/constants/theme';
+import { colors, layout, motion, radius, shadows, spacing, typography } from '@/constants/theme';
 
 type ToastType = 'success' | 'error' | 'info';
 
@@ -28,9 +35,9 @@ export function useToast(): ToastContextValue {
 }
 
 const TOAST_COLORS: Record<ToastType, string> = {
-  success: palette.emerald500,
-  error: palette.red500,
-  info: palette.blue500,
+  success: colors.success,
+  error: colors.danger,
+  info: colors.info,
 };
 
 const TOAST_ICONS: Record<ToastType, typeof CheckCircle2> = {
@@ -39,12 +46,14 @@ const TOAST_ICONS: Record<ToastType, typeof CheckCircle2> = {
   info: Info,
 };
 
+const OFFSCREEN = -20;
+
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<{ message: string; type: ToastType; key: number } | null>(
     null
   );
-  const opacity = useAnimatedValue(0);
-  const translateY = useAnimatedValue(-20);
+  const opacity = useSharedValue(0);
+  const translateY = useSharedValue(OFFSCREEN);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const insets = useSafeAreaInsets();
 
@@ -56,25 +65,37 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
     if (!toast) return;
 
     if (hideTimer.current) clearTimeout(hideTimer.current);
-    opacity.setValue(0);
-    translateY.setValue(-20);
-    Animated.parallel([
-      Animated.timing(opacity, { toValue: 1, duration: 200, useNativeDriver: true }),
-      Animated.spring(translateY, { toValue: 0, useNativeDriver: true, friction: 8 }),
-    ]).start();
+    opacity.value = 0;
+    translateY.value = OFFSCREEN;
+    opacity.value = withTiming(1, {
+      duration: motion.duration.base,
+      easing: motion.easing.standard,
+      reduceMotion: ReduceMotion.System,
+    });
+    translateY.value = withSpring(0, motion.spring.entrance);
 
-    hideTimer.current = setTimeout(() => {
-      Animated.timing(opacity, { toValue: 0, duration: 250, useNativeDriver: true }).start(
-        ({ finished }) => {
-          if (finished) setToast(null);
-        }
-      );
-    }, toast.type === 'error' ? 4000 : 2600);
+    hideTimer.current = setTimeout(
+      () => {
+        opacity.value = withTiming(0, {
+          duration: motion.duration.slow,
+          easing: motion.easing.out,
+          reduceMotion: ReduceMotion.System,
+        });
+        // Unmount slightly after the fade so the view is gone, not just clear.
+        hideTimer.current = setTimeout(() => setToast(null), motion.duration.slow);
+      },
+      toast.type === 'error' ? 4000 : 2600
+    );
 
     return () => {
       if (hideTimer.current) clearTimeout(hideTimer.current);
     };
   }, [toast, opacity, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
 
   const value = useMemo(() => ({ showToast }), [showToast]);
   const Icon = toast ? TOAST_ICONS[toast.type] : null;
@@ -85,15 +106,13 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
       {toast && Icon && (
         <Animated.View
           pointerEvents="none"
+          accessibilityLiveRegion="polite"
           style={[
             styles.toast,
-            {
-              top: insets.top + (Platform.OS === 'android' ? 12 : 8),
-              opacity,
-              transform: [{ translateY }],
-            },
+            { top: insets.top + (Platform.OS === 'android' ? spacing.md : spacing.sm) },
+            animatedStyle,
           ]}>
-          <Icon size={18} color={TOAST_COLORS[toast.type]} />
+          <Icon size={layout.icon.lg} color={TOAST_COLORS[toast.type]} />
           <Text style={styles.text} numberOfLines={3}>
             {toast.message}
           </Text>
@@ -112,20 +131,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    backgroundColor: '#363636',
+    backgroundColor: colors.inverseSurface,
     borderRadius: radius.md,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.md,
-    shadowColor: palette.black,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 8,
+    ...shadows.raised,
   },
   text: {
+    ...typography.body,
     flex: 1,
-    color: palette.white,
-    fontSize: 14,
+    color: colors.inverseText,
     fontWeight: '500',
   },
 });

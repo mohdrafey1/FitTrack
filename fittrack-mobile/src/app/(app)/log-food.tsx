@@ -1,7 +1,8 @@
 import { useFocusEffect, useRouter } from 'expo-router';
 import { ChevronLeft, PackagePlus, Plus, Search, UtensilsCrossed } from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
 import { getApiErrorMessage } from '@/api/client';
 import { customFoodsApi } from '@/api/customFoods';
@@ -11,10 +12,12 @@ import { Chip } from '@/components/Chip';
 import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
 import { ModalHeader } from '@/components/ModalHeader';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
-import { colors, gradients, palette, radius, spacing } from '@/constants/theme';
+import { colors, gradients, layout, motion, palette, radius, spacing, typography } from '@/constants/theme';
 import { useToast } from '@/context/ToastContext';
 import { foodDatabase, calculateMacros } from '@/data/foodDatabase';
+import { haptics } from '@/utils/haptics';
 import type { CustomFood, ServingSizes } from '@/types/api';
 
 /** A food the user can pick — built-in or their own custom food. */
@@ -148,6 +151,7 @@ export default function LogFoodScreen() {
       if (selected.isCustom && selected.customId) {
         customFoodsApi.incrementUsage(selected.customId).catch(() => {});
       }
+      haptics.success();
       showToast(`${selected.name} added`);
       router.back();
     } catch (error) {
@@ -164,13 +168,14 @@ export default function LogFoodScreen() {
         title="Add Food"
         subtitle="Log a meal for today"
         right={
-          <Pressable
+          <PressableScale
             onPress={() => router.push('/create-food')}
-            accessibilityRole="button"
-            style={({ pressed }) => [styles.newFoodButton, pressed && { opacity: 0.8 }]}>
-            <PackagePlus size={15} color={palette.orange600} />
+            haptic="selection"
+            accessibilityLabel="Create a new custom food"
+            style={styles.newFoodButton}>
+            <PackagePlus size={layout.icon.sm} color={palette.orange600} />
             <Text style={styles.newFoodText}>New</Text>
-          </Pressable>
+          </PressableScale>
         }
       />
 
@@ -181,21 +186,19 @@ export default function LogFoodScreen() {
             onChangeText={setSearchTerm}
             placeholder="Search foods (e.g. paneer, rice)..."
             autoCorrect={false}
-            containerStyle={{ marginBottom: spacing.md }}
+            containerStyle={styles.searchField}
           />
 
           {filteredFoods.length > 0 ? (
             <Card style={styles.listCard}>
               {filteredFoods.map((food, index) => (
-                <Pressable
+                <PressableScale
                   key={food.key}
                   onPress={() => selectFood(food)}
-                  accessibilityRole="button"
-                  style={({ pressed }) => [
-                    styles.foodRow,
-                    index > 0 && styles.foodRowBorder,
-                    pressed && { backgroundColor: palette.gray50 },
-                  ]}>
+                  scaleTo={motion.press.scaleSubtle}
+                  haptic="selection"
+                  accessibilityLabel={`${food.name}, ${food.calories} calories per 100 grams`}
+                  style={[styles.foodRow, index > 0 && styles.foodRowBorder]}>
                   <View style={styles.foodInfo}>
                     <View style={styles.foodNameRow}>
                       <Text style={styles.foodName} numberOfLines={1}>
@@ -216,13 +219,13 @@ export default function LogFoodScreen() {
                     <Text style={styles.foodCaloriesValue}>{food.calories} cal</Text>
                     <Text style={styles.foodCaloriesUnit}>per 100g</Text>
                   </View>
-                </Pressable>
+                </PressableScale>
               ))}
             </Card>
           ) : (
             <Card>
               <View style={styles.emptyState}>
-                <Search size={30} color={palette.gray400} />
+                <Search size={26} color={colors.textFaint} />
                 <Text style={styles.emptyTitle}>No foods found for “{searchTerm}”</Text>
                 <GradientButton
                   label="Create Custom Food"
@@ -242,9 +245,9 @@ export default function LogFoodScreen() {
             <View style={styles.selectedHeader}>
               <View style={styles.selectedTitleGroup}>
                 <View style={styles.selectedIcon}>
-                  <UtensilsCrossed size={16} color={palette.orange600} />
+                  <UtensilsCrossed size={layout.icon.md} color={palette.orange600} />
                 </View>
-                <View style={{ flex: 1 }}>
+                <View style={styles.flexOne}>
                   <Text style={styles.selectedName} numberOfLines={1}>
                     {selected.name}
                   </Text>
@@ -253,14 +256,15 @@ export default function LogFoodScreen() {
                   </Text>
                 </View>
               </View>
-              <Pressable
+              <PressableScale
                 onPress={() => setSelected(null)}
-                hitSlop={8}
-                accessibilityRole="button"
-                style={({ pressed }) => [styles.changeButton, pressed && { opacity: 0.7 }]}>
-                <ChevronLeft size={14} color={palette.gray600} />
+                hitSlop={layout.hitSlop}
+                haptic="selection"
+                accessibilityLabel="Pick a different food"
+                style={styles.changeButton}>
+                <ChevronLeft size={layout.icon.sm} color={colors.textSecondary} />
                 <Text style={styles.changeButtonText}>Change</Text>
-              </Pressable>
+              </PressableScale>
             </View>
 
             <Text style={styles.fieldLabel}>Serving size</Text>
@@ -297,7 +301,10 @@ export default function LogFoodScreen() {
             )}
 
             {nutrition && (
-              <View style={styles.nutritionPreview}>
+              <Animated.View
+                entering={FadeIn.duration(motion.duration.fast)}
+                layout={LinearTransition.duration(motion.duration.base)}
+                style={styles.nutritionPreview}>
                 <Text style={styles.nutritionTitle}>Nutrition ({quantityGrams}g)</Text>
                 <View style={styles.nutritionGrid}>
                   <NutritionCell label="Calories" value={`${nutrition.calories}`} accent={palette.orange600} />
@@ -305,7 +312,7 @@ export default function LogFoodScreen() {
                   <NutritionCell label="Carbs" value={`${nutrition.carbs}g`} accent={palette.amber600} />
                   <NutritionCell label="Fat" value={`${nutrition.fat}g`} accent={palette.purple600} />
                 </View>
-              </View>
+              </Animated.View>
             )}
           </Card>
 
@@ -344,19 +351,26 @@ const styles = StyleSheet.create({
   topSpacer: {
     height: spacing.md,
   },
+  flexOne: {
+    flex: 1,
+  },
   newFoodButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
     backgroundColor: palette.orange100,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
+    minHeight: layout.iconButton,
   },
   newFoodText: {
-    fontSize: 13,
+    ...typography.captionStrong,
     fontWeight: '700',
     color: palette.orange600,
+  },
+  searchField: {
+    marginBottom: spacing.md,
   },
   listCard: {
     paddingVertical: spacing.xs,
@@ -369,14 +383,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
     gap: spacing.md,
     borderRadius: radius.sm,
+    minHeight: layout.tapTarget,
   },
   foodRowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopWidth: layout.hairline,
+    borderTopColor: colors.divider,
   },
   foodInfo: {
     flex: 1,
-    gap: 2,
   },
   foodNameRow: {
     flexDirection: 'row',
@@ -384,46 +398,41 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   foodName: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.bodyStrong,
     flexShrink: 1,
   },
   customBadge: {
-    backgroundColor: palette.blue100,
+    backgroundColor: colors.infoBg,
     borderRadius: radius.full,
-    paddingHorizontal: 8,
-    paddingVertical: 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xxs,
   },
   customBadgeText: {
-    fontSize: 10.5,
+    ...typography.micro,
     fontWeight: '700',
     color: palette.blue700,
   },
   foodCategory: {
-    fontSize: 12.5,
-    color: colors.textMuted,
+    ...typography.caption,
     textTransform: 'capitalize',
   },
   foodCalories: {
     alignItems: 'flex-end',
   },
   foodCaloriesValue: {
-    fontSize: 14,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.numberSm,
   },
   foodCaloriesUnit: {
-    fontSize: 11,
+    ...typography.micro,
     color: colors.textMuted,
   },
   emptyState: {
     alignItems: 'center',
     gap: spacing.md,
-    paddingVertical: spacing.xl,
+    paddingVertical: spacing.lg,
   },
   emptyTitle: {
-    fontSize: 14.5,
+    ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
   },
@@ -444,36 +453,31 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   selectedIcon: {
-    width: 34,
-    height: 34,
+    width: layout.iconTile.md,
+    height: layout.iconTile.md,
     borderRadius: radius.sm,
     backgroundColor: palette.orange100,
     alignItems: 'center',
     justifyContent: 'center',
   },
   selectedName: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.heading,
   },
   changeButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 2,
-    backgroundColor: palette.gray100,
+    gap: spacing.xxs,
+    backgroundColor: colors.fill,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
-    paddingVertical: 6,
+    paddingVertical: spacing.xs,
+    minHeight: layout.iconButton,
   },
   changeButtonText: {
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.captionStrong,
   },
   fieldLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    ...typography.label,
   },
   servingRow: {
     flexDirection: 'row',
@@ -484,17 +488,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   nutritionPreview: {
-    backgroundColor: palette.gray50,
+    backgroundColor: colors.surfaceMuted,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: colors.cardBorder,
     padding: spacing.md,
     gap: spacing.sm,
   },
   nutritionTitle: {
-    fontSize: 13,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.labelStrong,
   },
   nutritionGrid: {
     flexDirection: 'row',
@@ -502,14 +504,13 @@ const styles = StyleSheet.create({
   nutritionCell: {
     flex: 1,
     alignItems: 'center',
-    gap: 1,
   },
   nutritionValue: {
-    fontSize: 16,
+    ...typography.numberMd,
     fontWeight: '800',
   },
   nutritionLabel: {
-    fontSize: 11,
+    ...typography.micro,
     color: colors.textMuted,
   },
 });

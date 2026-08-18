@@ -3,9 +3,10 @@ import { Trophy, type LucideIcon } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { AnimatedNumber } from '@/components/AnimatedNumber';
 import { Card } from '@/components/Card';
 import { ProgressBar } from '@/components/ProgressBar';
-import { colors, palette, radius, spacing, type Gradient } from '@/constants/theme';
+import { colors, layout, radius, spacing, typography, type Gradient } from '@/constants/theme';
 import { formatNumber, progressPercent } from '@/utils/format';
 
 interface ProgressCardProps {
@@ -17,7 +18,7 @@ interface ProgressCardProps {
   gradient: Gradient;
 }
 
-/** Daily goal card (calories / protein / water) — mirrors the web dashboard. */
+/** Wide daily-goal row: gradient icon chip, running total and a progress bar. */
 export function ProgressCard({
   title,
   icon: Icon,
@@ -39,12 +40,12 @@ export function ProgressCard({
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
             style={styles.iconBox}>
-            <Icon size={18} color={palette.white} strokeWidth={2.2} />
+            <Icon size={layout.icon.md} color={colors.onGradient} strokeWidth={layout.strokeWidth} />
           </LinearGradient>
           <Text style={styles.title}>{title}</Text>
         </View>
         <View style={styles.valueGroup}>
-          <Text style={styles.consumed}>{formatNumber(consumed)}</Text>
+          <AnimatedNumber value={consumed} style={styles.consumed} />
           <Text style={styles.target}>
             of {formatNumber(target)} {unit}
           </Text>
@@ -54,10 +55,10 @@ export function ProgressCard({
       <ProgressBar percentage={percentage} />
 
       <View style={styles.footerRow}>
-        <Text style={styles.percent}>{percentage.toFixed(1)}%</Text>
+        <Text style={styles.percent}>{percentage.toFixed(0)}%</Text>
         {achieved ? (
           <View style={styles.achieved}>
-            <Trophy size={14} color={palette.emerald500} />
+            <Trophy size={layout.icon.sm} color={colors.success} strokeWidth={layout.strokeWidth} />
             <Text style={styles.achievedText}>Goal achieved!</Text>
           </View>
         ) : (
@@ -85,28 +86,23 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.md,
+    width: layout.iconTile.md,
+    height: layout.iconTile.md,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.subheading,
   },
   valueGroup: {
     alignItems: 'flex-end',
   },
   consumed: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.numberLg,
   },
   target: {
-    fontSize: 12,
-    color: colors.textMuted,
+    ...typography.caption,
   },
   footerRow: {
     flexDirection: 'row',
@@ -114,22 +110,20 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   percent: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    ...typography.labelStrong,
   },
   achieved: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 4,
+    gap: spacing.xs,
   },
   achievedText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: palette.emerald600,
+    ...typography.label,
+    color: colors.success,
+    fontWeight: '600',
   },
   remaining: {
-    fontSize: 13,
+    ...typography.label,
     color: colors.textMuted,
   },
 });

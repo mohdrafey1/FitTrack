@@ -11,7 +11,7 @@ import {
   type ViewStyle,
 } from 'react-native';
 
-import { colors, palette, radius, spacing } from '@/constants/theme';
+import { colors, layout, radius, spacing, typography } from '@/constants/theme';
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -48,7 +48,10 @@ export function Input({
         ]}>
         {Icon && (
           <View style={styles.leadingIcon}>
-            <Icon size={18} color={focused ? palette.blue500 : palette.gray400} />
+            <Icon
+              size={layout.icon.lg}
+              color={focused ? colors.inputBorderFocused : colors.textFaint}
+            />
           </View>
         )}
         <TextInput
@@ -60,7 +63,7 @@ export function Input({
           {...rest}
           style={[styles.input, style]}
           secureTextEntry={hidden}
-          placeholderTextColor={palette.gray400}
+          placeholderTextColor={colors.textFaint}
           // `underlineColorAndroid` avoids the stock Android underline showing
           // through our own bordered wrapper.
           underlineColorAndroid="transparent"
@@ -76,14 +79,14 @@ export function Input({
         {password && (
           <Pressable
             onPress={() => setHidden((h) => !h)}
-            hitSlop={8}
+            hitSlop={layout.hitSlop}
             accessibilityRole="button"
             accessibilityLabel={hidden ? 'Show password' : 'Hide password'}
             style={styles.eyeButton}>
             {hidden ? (
-              <Eye size={19} color={palette.gray400} />
+              <Eye size={layout.icon.lg} color={colors.textFaint} />
             ) : (
-              <EyeOff size={19} color={palette.gray400} />
+              <EyeOff size={layout.icon.lg} color={colors.textFaint} />
             )}
           </Pressable>
         )}
@@ -96,32 +99,32 @@ export function Input({
 
 const styles = StyleSheet.create({
   container: {
-    gap: 6,
+    gap: spacing.xs,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    ...typography.label,
   },
   inputWrapper: {
     flexDirection: 'row',
     alignItems: 'center',
     backgroundColor: colors.inputBackground,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: colors.inputBorder,
     borderRadius: radius.md,
+    minHeight: layout.tapTarget,
   },
   /**
    * Focus must only change *existing* properties. Adding shadow/elevation props
    * on focus makes Android recreate the native view, which detaches the child
    * TextInput — the keyboard closes mid-tap and onBlur never fires, so fields
-   * get stuck looking focused. Border colour alone is a cheap prop update.
+   * get stuck looking focused. Border colour alone is a cheap prop update, and
+   * the same rule is why this wrapper is not a `PressableScale`.
    */
   inputWrapperFocused: {
-    borderColor: palette.blue500,
+    borderColor: colors.inputBorderFocused,
   },
   inputWrapperError: {
-    borderColor: palette.red500,
+    borderColor: colors.danger,
   },
   leadingIcon: {
     paddingLeft: spacing.md,
@@ -129,19 +132,17 @@ const styles = StyleSheet.create({
   input: {
     flex: 1,
     paddingHorizontal: spacing.lg,
-    paddingVertical: 13,
-    fontSize: 15.5,
-    color: colors.text,
+    paddingVertical: spacing.md,
+    ...typography.body,
   },
   eyeButton: {
     paddingHorizontal: spacing.md,
   },
   error: {
-    fontSize: 12.5,
-    color: palette.red600,
+    ...typography.caption,
+    color: colors.danger,
   },
   hint: {
-    fontSize: 12.5,
-    color: colors.textMuted,
+    ...typography.caption,
   },
 });

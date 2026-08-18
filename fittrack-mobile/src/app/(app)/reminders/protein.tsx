@@ -1,15 +1,16 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Beef, Save, Trash2 } from 'lucide-react-native';
 import React, { useMemo, useState } from 'react';
-import { Alert, Platform, Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Switch, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
 import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
 import { ModalHeader } from '@/components/ModalHeader';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
 import { TimePickerField } from '@/components/TimePickerField';
-import { colors, gradients, palette, radius, spacing } from '@/constants/theme';
+import { colors, gradients, layout, palette, radius, spacing, typography } from '@/constants/theme';
 import { useReminders } from '@/context/RemindersContext';
 import { useToast } from '@/context/ToastContext';
 import { DEFAULT_PROTEIN_MESSAGE } from '@/types/reminders';
@@ -103,9 +104,9 @@ export default function ProteinReminderScreen() {
       <Card style={styles.section}>
         <View style={styles.previewRow}>
           <View style={styles.previewIcon}>
-            <Beef size={18} color={palette.white} />
+            <Beef size={layout.icon.lg} color={colors.onGradient} />
           </View>
-          <View style={{ flex: 1 }}>
+          <View style={styles.flexOne}>
             <Text style={styles.previewTitle}>Protein reminder</Text>
             <Text style={styles.previewBody} numberOfLines={2}>
               {message.trim() || DEFAULT_PROTEIN_MESSAGE}
@@ -140,8 +141,8 @@ export default function ProteinReminderScreen() {
           <Switch
             value={enabled}
             onValueChange={setEnabled}
-            trackColor={{ false: palette.gray200, true: palette.red400 }}
-            thumbColor={palette.white}
+            trackColor={{ false: colors.divider, true: palette.red400 }}
+            thumbColor={colors.card}
           />
         </View>
       </Card>
@@ -155,13 +156,14 @@ export default function ProteinReminderScreen() {
       />
 
       {isEditing && (
-        <Pressable
+        <PressableScale
           onPress={handleDelete}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.deleteButton, pressed && { opacity: 0.8 }]}>
-          <Trash2 size={16} color={palette.red600} />
+          haptic="none"
+          accessibilityLabel="Delete reminder"
+          style={styles.deleteButton}>
+          <Trash2 size={layout.icon.md} color={colors.danger} />
           <Text style={styles.deleteText}>Delete Reminder</Text>
-        </Pressable>
+        </PressableScale>
       )}
     </Screen>
   );
@@ -170,6 +172,9 @@ export default function ProteinReminderScreen() {
 const styles = StyleSheet.create({
   topSpacer: {
     height: spacing.md,
+  },
+  flexOne: {
+    flex: 1,
   },
   section: {
     gap: spacing.lg,
@@ -181,35 +186,34 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   previewIcon: {
-    width: 38,
-    height: 38,
+    width: layout.iconTile.lg,
+    height: layout.iconTile.lg,
     borderRadius: radius.md,
     backgroundColor: palette.red500,
     alignItems: 'center',
     justifyContent: 'center',
   },
   previewTitle: {
-    fontSize: 13,
+    ...typography.captionStrong,
     fontWeight: '700',
     color: colors.text,
   },
   previewBody: {
-    fontSize: 13,
+    ...typography.caption,
     color: colors.textSecondary,
   },
   previewTime: {
-    fontSize: 13,
-    fontWeight: '600',
+    ...typography.captionStrong,
     color: colors.textMuted,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: layout.tapTarget,
   },
   switchLabel: {
-    fontSize: 15,
-    fontWeight: '500',
+    ...typography.body,
     color: colors.textSecondary,
   },
   deleteButton: {
@@ -218,15 +222,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     marginTop: spacing.md,
-    paddingVertical: 13,
+    minHeight: layout.tapTarget,
     borderRadius: radius.md,
     backgroundColor: colors.dangerBg,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderWidth: layout.border,
+    borderColor: colors.dangerBorder,
   },
   deleteText: {
-    fontSize: 14.5,
+    ...typography.bodyStrong,
     fontWeight: '700',
-    color: palette.red600,
+    color: colors.danger,
   },
 });

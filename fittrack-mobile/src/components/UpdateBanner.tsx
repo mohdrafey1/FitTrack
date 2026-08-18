@@ -2,19 +2,18 @@ import { LinearGradient } from 'expo-linear-gradient';
 import * as Updates from 'expo-updates';
 import { RefreshCw, X } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Animated,
-  AppState,
-  Pressable,
-  StyleSheet,
-  Text,
-  useAnimatedValue,
-  View,
-} from 'react-native';
+import { ActivityIndicator, AppState, StyleSheet, Text, View } from 'react-native';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withSpring,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
-import { gradients, palette, radius, spacing } from '@/constants/theme';
+import { PressableScale } from '@/components/PressableScale';
+import { colors, gradients, layout, motion, radius, shadows, spacing, typography } from '@/constants/theme';
+
+const HIDDEN_OFFSET = -160;
 
 /**
  * OTA update banner (EAS Update).
@@ -28,7 +27,7 @@ export function UpdateBanner() {
   const { isUpdatePending, isRestarting } = Updates.useUpdates();
   const [dismissed, setDismissed] = useState(false);
   const insets = useSafeAreaInsets();
-  const translateY = useAnimatedValue(-160);
+  const translateY = useSharedValue(HIDDEN_OFFSET);
 
   useEffect(() => {
     if (__DEV__ || !Updates.isEnabled) return;
@@ -61,12 +60,12 @@ export function UpdateBanner() {
   const visible = isUpdatePending && !dismissed;
 
   useEffect(() => {
-    Animated.spring(translateY, {
-      toValue: visible ? 0 : -160,
-      useNativeDriver: true,
-      friction: 9,
-    }).start();
+    translateY.value = withSpring(visible ? 0 : HIDDEN_OFFSET, motion.spring.entrance);
   }, [visible, translateY]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: translateY.value }],
+  }));
 
   if (!isUpdatePending) return null;
 
@@ -77,24 +76,27 @@ export function UpdateBanner() {
 
   return (
     <Animated.View
-      style={[styles.container, { top: insets.top + spacing.sm, transform: [{ translateY }] }]}
+      style={[styles.container, { top: insets.top + spacing.sm }, animatedStyle]}
       pointerEvents={visible ? 'auto' : 'none'}>
-      <Pressable
+      <PressableScale
         onPress={handleRestart}
         disabled={isRestarting}
-        accessibilityRole="button"
-        accessibilityLabel="A new update is ready. Tap to restart the app and apply it."
-        style={({ pressed }) => [pressed && { opacity: 0.9 }]}>
+        scaleTo={motion.press.scaleSubtle}
+        accessibilityLabel="A new update is ready. Tap to restart the app and apply it.">
         <LinearGradient
           colors={gradients.brand}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 0 }}
           style={styles.banner}>
           {isRestarting ? (
-            <ActivityIndicator size="small" color={palette.white} />
+            <ActivityIndicator size="small" color={colors.onGradient} />
           ) : (
             <View style={styles.iconCircle}>
-              <RefreshCw size={15} color={palette.white} strokeWidth={2.4} />
+              <RefreshCw
+                size={layout.icon.sm}
+                color={colors.onGradient}
+                strokeWidth={layout.strokeWidth}
+              />
             </View>
           )}
           <View style={styles.textGroup}>
@@ -102,17 +104,17 @@ export function UpdateBanner() {
             {!isRestarting && <Text style={styles.subtitle}>Tap to restart and apply</Text>}
           </View>
           {!isRestarting && (
-            <Pressable
+            <PressableScale
               onPress={() => setDismissed(true)}
-              hitSlop={10}
-              accessibilityRole="button"
+              hitSlop={layout.hitSlop}
+              haptic="none"
               accessibilityLabel="Dismiss update banner"
-              style={({ pressed }) => [styles.dismiss, pressed && { opacity: 0.6 }]}>
-              <X size={16} color="rgba(255,255,255,0.85)" />
-            </Pressable>
+              style={styles.dismiss}>
+              <X size={layout.icon.md} color={colors.onGradientMuted} />
+            </PressableScale>
           )}
         </LinearGradient>
-      </Pressable>
+      </PressableScale>
     </Animated.View>
   );
 }
@@ -131,38 +133,32 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.lg,
-    shadowColor: palette.black,
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 12,
-    elevation: 8,
+    ...shadows.raised,
   },
   iconCircle: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
-    backgroundColor: 'rgba(255,255,255,0.18)',
+    width: layout.iconTile.sm,
+    height: layout.iconTile.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.onGradientFill,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textGroup: {
     flex: 1,
-    gap: 1,
   },
   title: {
-    color: palette.white,
-    fontSize: 14.5,
-    fontWeight: '700',
+    ...typography.bodyStrong,
+    color: colors.onGradient,
   },
   subtitle: {
-    color: 'rgba(255,255,255,0.85)',
-    fontSize: 12.5,
+    ...typography.caption,
+    color: colors.onGradientMuted,
   },
   dismiss: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    backgroundColor: 'rgba(255,255,255,0.14)',
+    width: layout.iconTile.sm,
+    height: layout.iconTile.sm,
+    borderRadius: radius.full,
+    backgroundColor: colors.onGradientFill,
     alignItems: 'center',
     justifyContent: 'center',
   },

@@ -9,11 +9,12 @@ import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
 import { ModalHeader } from '@/components/ModalHeader';
 import { Screen } from '@/components/Screen';
-import { colors, gradients, spacing } from '@/constants/theme';
+import { colors, gradients, layout, radius, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import type { ActivityLevel, FitnessGoal, Gender } from '@/types/api';
 import { ACTIVITY_LEVEL_LABELS, FITNESS_GOAL_LABELS, GENDER_LABELS } from '@/utils/format';
+import { haptics } from '@/utils/haptics';
 
 interface FormState {
   currentWeight: string;
@@ -90,6 +91,7 @@ export default function EditProfileScreen() {
     });
     setSubmitting(false);
     if (result.success) {
+      haptics.success();
       showToast('Profile updated');
       router.back();
     } else {
@@ -238,29 +240,25 @@ const styles = StyleSheet.create({
   },
   errorBanner: {
     backgroundColor: colors.dangerBg,
-    borderWidth: 1,
-    borderColor: '#FECACA',
-    borderRadius: 10,
+    borderWidth: layout.border,
+    borderColor: colors.dangerBorder,
+    borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
   errorBannerText: {
-    color: '#DC2626',
-    fontSize: 13.5,
+    ...typography.label,
+    color: colors.danger,
   },
   section: {
     gap: spacing.lg,
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 15.5,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.heading,
   },
   fieldLabel: {
-    fontSize: 14,
-    fontWeight: '500',
-    color: colors.textSecondary,
+    ...typography.labelStrong,
     marginBottom: spacing.sm,
   },
   rowPair: {

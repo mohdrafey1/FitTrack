@@ -11,14 +11,25 @@ import {
   Plus,
 } from 'lucide-react-native';
 import React from 'react';
-import { Pressable, StyleSheet, Switch, Text, View } from 'react-native';
+import { StyleSheet, Switch, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
 import { Card } from '@/components/Card';
 import { EmptyState } from '@/components/EmptyState';
 import { GradientButton } from '@/components/GradientButton';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
 import { SectionHeader } from '@/components/SectionHeader';
-import { colors, gradients, palette, radius, spacing } from '@/constants/theme';
+import {
+  colors,
+  gradients,
+  layout,
+  motion,
+  palette,
+  radius,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useReminders } from '@/context/RemindersContext';
 import { useToast } from '@/context/ToastContext';
 import { openSystemNotificationSettings } from '@/notifications/notifications';
@@ -80,14 +91,14 @@ export default function RemindersScreen() {
     <Screen>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable
+        <PressableScale
           onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))}
-          hitSlop={8}
-          accessibilityRole="button"
+          hitSlop={layout.hitSlop}
+          haptic="selection"
           accessibilityLabel="Go back"
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.7 }]}>
-          <ArrowLeft size={20} color={palette.gray600} />
-        </Pressable>
+          style={styles.backButton}>
+          <ArrowLeft size={layout.icon.lg} color={colors.textSecondary} />
+        </PressableScale>
         <View>
           <Text style={styles.title}>Reminders</Text>
           <Text style={styles.subtitle}>Protein & hydration notifications</Text>
@@ -98,8 +109,8 @@ export default function RemindersScreen() {
       {permission === 'unavailable' ? (
         <Card style={styles.permissionCard}>
           <View style={styles.permissionRow}>
-            <View style={[styles.permissionIcon, { backgroundColor: palette.gray100 }]}>
-              <Info size={18} color={palette.gray500} />
+            <View style={[styles.permissionIcon, { backgroundColor: colors.fill }]}>
+              <Info size={layout.icon.lg} color={colors.textMuted} />
             </View>
             <View style={styles.permissionTextGroup}>
               <Text style={styles.permissionTitle}>Simulator detected</Text>
@@ -114,7 +125,7 @@ export default function RemindersScreen() {
         <Card style={styles.permissionCard}>
           <View style={styles.permissionRow}>
             <View style={[styles.permissionIcon, { backgroundColor: palette.amber100 }]}>
-              <BellOff size={18} color={palette.amber600} />
+              <BellOff size={layout.icon.lg} color={colors.warning} />
             </View>
             <View style={styles.permissionTextGroup}>
               <Text style={styles.permissionTitle}>Notifications are off</Text>
@@ -135,7 +146,7 @@ export default function RemindersScreen() {
         </Card>
       ) : (
         <View style={styles.grantedBanner}>
-          <Bell size={14} color={palette.emerald600} />
+          <Bell size={layout.icon.sm} color={colors.success} />
           <Text style={styles.grantedText}>Notifications are enabled</Text>
         </View>
       )}
@@ -146,23 +157,23 @@ export default function RemindersScreen() {
         icon={Beef}
         iconColor={palette.red500}
         right={
-          <Pressable
+          <PressableScale
             onPress={() => router.push('/reminders/protein')}
             disabled={!ready || protein.length >= MAX_PROTEIN_REMINDERS}
-            hitSlop={8}
-            accessibilityRole="button"
+            hitSlop={layout.hitSlop}
             accessibilityLabel="Add protein reminder"
-            style={({ pressed }) => [
+            style={[
               styles.addButton,
-              (pressed || protein.length >= MAX_PROTEIN_REMINDERS) && { opacity: 0.5 },
+              protein.length >= MAX_PROTEIN_REMINDERS && styles.addButtonDisabled,
             ]}>
-            <Plus size={16} color={palette.white} />
-          </Pressable>
+            <Plus size={layout.icon.md} color={colors.onGradient} />
+          </PressableScale>
         }
       />
       <Card style={styles.listCard}>
         {sortedProtein.length === 0 ? (
           <EmptyState
+            compact
             icon={Beef}
             title="No protein reminders yet"
             message={'Add one like:\n“Remind me to add my protein at 10:00 AM every day.”'}
@@ -178,39 +189,39 @@ export default function RemindersScreen() {
           />
         ) : (
           sortedProtein.map((reminder, index) => (
-            <Pressable
+            <Animated.View
               key={reminder.id}
-              onPress={() =>
-                router.push({ pathname: '/reminders/protein', params: { id: reminder.id } })
-              }
-              accessibilityRole="button"
-              accessibilityLabel={`Edit reminder at ${formatClockTime(reminder.hour, reminder.minute)}`}
-              style={({ pressed }) => [
-                styles.reminderRow,
-                index > 0 && styles.reminderRowBorder,
-                pressed && { backgroundColor: palette.gray50 },
-              ]}>
-              <View style={styles.reminderInfo}>
-                <Text style={[styles.reminderTime, !reminder.enabled && styles.dimmed]}>
-                  {formatClockTime(reminder.hour, reminder.minute)}
-                </Text>
-                <Text
-                  style={[styles.reminderMessage, !reminder.enabled && styles.dimmed]}
-                  numberOfLines={1}>
-                  {reminder.message}
-                </Text>
-                <Text style={styles.reminderMeta}>
-                  {reminder.enabled ? 'Every day' : 'Paused'}
-                </Text>
-              </View>
-              <Switch
-                value={reminder.enabled}
-                onValueChange={(value) => toggleProtein(reminder.id, value)}
-                trackColor={{ false: palette.gray200, true: palette.red400 }}
-                thumbColor={palette.white}
-              />
-              <ChevronRight size={17} color={palette.gray400} />
-            </Pressable>
+              entering={FadeIn.duration(motion.duration.base)}
+              exiting={FadeOut.duration(motion.duration.fast)}
+              layout={LinearTransition.duration(motion.duration.base)}>
+              <PressableScale
+                onPress={() =>
+                  router.push({ pathname: '/reminders/protein', params: { id: reminder.id } })
+                }
+                scaleTo={motion.press.scaleSubtle}
+                haptic="selection"
+                accessibilityLabel={`Edit reminder at ${formatClockTime(reminder.hour, reminder.minute)}`}
+                style={[styles.reminderRow, index > 0 && styles.reminderRowBorder]}>
+                <View style={styles.reminderInfo}>
+                  <Text style={[styles.reminderTime, !reminder.enabled && styles.dimmed]}>
+                    {formatClockTime(reminder.hour, reminder.minute)}
+                  </Text>
+                  <Text
+                    style={[styles.reminderMessage, !reminder.enabled && styles.dimmed]}
+                    numberOfLines={1}>
+                    {reminder.message}
+                  </Text>
+                  <Text style={styles.reminderMeta}>{reminder.enabled ? 'Every day' : 'Paused'}</Text>
+                </View>
+                <Switch
+                  value={reminder.enabled}
+                  onValueChange={(value) => toggleProtein(reminder.id, value)}
+                  trackColor={{ false: colors.divider, true: palette.red400 }}
+                  thumbColor={colors.card}
+                />
+                <ChevronRight size={layout.icon.md} color={colors.textFaint} />
+              </PressableScale>
+            </Animated.View>
           ))
         )}
       </Card>
@@ -239,21 +250,22 @@ export default function RemindersScreen() {
           <Switch
             value={water.enabled}
             onValueChange={toggleWater}
-            trackColor={{ false: palette.gray200, true: palette.blue500 }}
-            thumbColor={palette.white}
+            trackColor={{ false: colors.divider, true: palette.blue500 }}
+            thumbColor={colors.card}
           />
         </View>
-        <Pressable
+        <PressableScale
           onPress={() => router.push('/reminders/water')}
-          accessibilityRole="button"
-          style={({ pressed }) => [styles.configureRow, pressed && { opacity: 0.7 }]}>
+          haptic="selection"
+          accessibilityLabel="Configure water reminder schedule and message"
+          style={styles.configureRow}>
           <Text style={styles.configureText}>Configure schedule & message</Text>
-          <ChevronRight size={16} color={palette.blue600} />
-        </Pressable>
+          <ChevronRight size={layout.icon.md} color={colors.primary} />
+        </PressableScale>
       </Card>
 
       <View style={styles.footnote}>
-        <Info size={13} color={palette.gray400} />
+        <Info size={layout.icon.sm} color={colors.textFaint} />
         <Text style={styles.footnoteText}>
           Reminders are scheduled locally on this device — they fire even without an internet
           connection. Tapping one opens the matching logging screen.
@@ -268,79 +280,74 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: layout.iconButton,
+    height: layout.iconButton,
+    borderRadius: radius.full,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.text,
+    ...typography.display,
   },
   subtitle: {
-    fontSize: 13,
-    color: colors.textMuted,
+    ...typography.caption,
   },
   permissionCard: {
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   permissionRow: {
     flexDirection: 'row',
     gap: spacing.md,
   },
   permissionIcon: {
-    width: 38,
-    height: 38,
+    width: layout.iconTile.lg,
+    height: layout.iconTile.lg,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   permissionTextGroup: {
     flex: 1,
-    gap: 2,
   },
   permissionTitle: {
-    fontSize: 15,
+    ...typography.bodyStrong,
     fontWeight: '700',
-    color: colors.text,
   },
   permissionMessage: {
-    fontSize: 13,
-    color: colors.textSecondary,
-    lineHeight: 18,
+    ...typography.label,
   },
   grantedBanner: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    gap: 6,
-    marginBottom: spacing.xl,
+    gap: spacing.xs,
+    marginBottom: spacing.lg,
   },
   grantedText: {
-    fontSize: 13,
-    fontWeight: '500',
-    color: palette.emerald600,
+    ...typography.label,
+    color: colors.success,
   },
   addButton: {
-    width: 30,
-    height: 30,
-    borderRadius: 15,
+    width: layout.iconTile.md,
+    height: layout.iconTile.md,
+    borderRadius: radius.full,
     backgroundColor: palette.red500,
     alignItems: 'center',
     justifyContent: 'center',
   },
+  addButtonDisabled: {
+    opacity: 0.5,
+  },
   listCard: {
     paddingVertical: spacing.sm,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   reminderRow: {
     flexDirection: 'row',
@@ -349,27 +356,24 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     borderRadius: radius.sm,
+    minHeight: layout.tapTarget,
   },
   reminderRowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopWidth: layout.hairline,
+    borderTopColor: colors.divider,
   },
   reminderInfo: {
     flex: 1,
-    gap: 1,
   },
   reminderTime: {
-    fontSize: 18,
-    fontWeight: '800',
-    color: colors.text,
+    ...typography.numberMd,
   },
   reminderMessage: {
-    fontSize: 13.5,
+    ...typography.caption,
     color: colors.textSecondary,
   },
   reminderMeta: {
-    fontSize: 12,
-    color: colors.textFaint,
+    ...typography.micro,
   },
   dimmed: {
     opacity: 0.45,
@@ -385,16 +389,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopWidth: layout.hairline,
+    borderTopColor: colors.divider,
     paddingTop: spacing.md,
     paddingHorizontal: spacing.xs,
     marginTop: spacing.sm,
+    minHeight: layout.tapTarget,
   },
   configureText: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: palette.blue600,
+    ...typography.bodyStrong,
+    color: colors.primary,
   },
   footnote: {
     flexDirection: 'row',
@@ -402,9 +406,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   footnoteText: {
+    ...typography.caption,
     flex: 1,
-    fontSize: 12,
     color: colors.textFaint,
-    lineHeight: 17,
   },
 });

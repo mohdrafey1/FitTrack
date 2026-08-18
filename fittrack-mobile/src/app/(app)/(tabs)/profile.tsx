@@ -14,12 +14,15 @@ import {
   User as UserIcon,
 } from 'lucide-react-native';
 import React, { useCallback, useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Alert, StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { Card } from '@/components/Card';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
+import { ScreenTitle } from '@/components/ScreenTitle';
 import { SectionHeader } from '@/components/SectionHeader';
-import { colors, gradients, palette, radius, spacing } from '@/constants/theme';
+import { colors, gradients, layout, palette, radius, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import {
@@ -28,6 +31,8 @@ import {
   FITNESS_GOAL_LABELS,
   GENDER_LABELS,
 } from '@/utils/format';
+import { haptics } from '@/utils/haptics';
+import { enter } from '@/utils/motion';
 
 export default function ProfileScreen() {
   const { user, logout, refreshUser } = useAuth();
@@ -48,6 +53,7 @@ export default function ProfileScreen() {
         text: 'Log out',
         style: 'destructive',
         onPress: async () => {
+          haptics.warning();
           await logout();
           showToast('Logged out successfully');
         },
@@ -60,118 +66,129 @@ export default function ProfileScreen() {
 
   return (
     <Screen refreshing={refreshing} onRefresh={onRefresh}>
-      <View style={styles.header}>
-        <Text style={styles.title}>Profile</Text>
-      </View>
+      <Animated.View entering={enter(0)}>
+        <ScreenTitle title="Profile" />
 
-      {/* Identity card */}
-      <Card style={styles.identityCard}>
-        <LinearGradient
-          colors={gradients.brand}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.avatar}>
-          <Text style={styles.avatarInitial}>{user?.username?.charAt(0).toUpperCase()}</Text>
-        </LinearGradient>
-        <Text style={styles.username}>{user?.username}</Text>
-        <View style={styles.emailRow}>
-          <Mail size={13} color={palette.gray500} />
-          <Text style={styles.email}>{user?.email}</Text>
-        </View>
-        {!!user?.fitnessGoal && (
-          <View style={styles.goalBadge}>
-            <Target size={12} color={palette.indigo600} />
-            <Text style={styles.goalBadgeText}>{FITNESS_GOAL_LABELS[user.fitnessGoal]}</Text>
+        {/* Identity card */}
+        <Card style={styles.identityCard}>
+          <LinearGradient
+            colors={gradients.brand}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.avatar}>
+            <Text style={styles.avatarInitial}>{user?.username?.charAt(0).toUpperCase()}</Text>
+          </LinearGradient>
+          <Text style={styles.username} numberOfLines={1}>
+            {user?.username}
+          </Text>
+          <View style={styles.emailRow}>
+            <Mail size={layout.icon.sm} color={colors.textMuted} />
+            <Text style={styles.email} numberOfLines={1}>
+              {user?.email}
+            </Text>
           </View>
-        )}
-      </Card>
+          {!!user?.fitnessGoal && (
+            <View style={styles.goalBadge}>
+              <Target size={layout.icon.xs} color={palette.indigo600} />
+              <Text style={styles.goalBadgeText}>{FITNESS_GOAL_LABELS[user.fitnessGoal]}</Text>
+            </View>
+          )}
+        </Card>
+      </Animated.View>
 
       {/* Body stats */}
-      <Card style={styles.statsCard}>
-        <View style={styles.statsRow}>
-          <StatBlock
-            icon={Scale}
-            color={palette.blue600}
-            value={user?.currentWeight ? `${user.currentWeight} kg` : '—'}
-            label="Weight"
-          />
-          <View style={styles.statDivider} />
-          <StatBlock
-            icon={Target}
-            color={palette.emerald600}
-            value={user?.targetWeight ? `${user.targetWeight} kg` : '—'}
-            label="Target"
-          />
-          <View style={styles.statDivider} />
-          <StatBlock
-            icon={Activity}
-            color={palette.purple600}
-            value={user?.bmi ?? '—'}
-            label={bmiInfo ? `BMI · ${bmiInfo.text}` : 'BMI'}
-          />
-        </View>
-      </Card>
+      <Animated.View entering={enter(1)}>
+        <Card style={styles.statsCard}>
+          <View style={styles.statsRow}>
+            <StatBlock
+              icon={Scale}
+              color={palette.blue600}
+              value={user?.currentWeight ? `${user.currentWeight} kg` : '—'}
+              label="Weight"
+            />
+            <View style={styles.statDivider} />
+            <StatBlock
+              icon={Target}
+              color={palette.emerald600}
+              value={user?.targetWeight ? `${user.targetWeight} kg` : '—'}
+              label="Target"
+            />
+            <View style={styles.statDivider} />
+            <StatBlock
+              icon={Activity}
+              color={palette.purple600}
+              value={user?.bmi ?? '—'}
+              label={bmiInfo ? `BMI · ${bmiInfo.text}` : 'BMI'}
+            />
+          </View>
+        </Card>
+      </Animated.View>
 
       {/* Details */}
-      <SectionHeader title="Details" icon={UserIcon} />
-      <Card style={styles.detailsCard}>
-        <DetailRow label="Age" value={user?.age ? `${user.age} years` : 'Not set'} />
-        <DetailRow label="Height" value={user?.height ? `${user.height} cm` : 'Not set'} />
-        <DetailRow label="Gender" value={user?.gender ? GENDER_LABELS[user.gender] : 'Not set'} />
-        <DetailRow
-          label="Activity level"
-          value={user?.activityLevel ? ACTIVITY_LEVEL_LABELS[user.activityLevel] : 'Not set'}
-        />
-        <DetailRow
-          label="Daily targets"
-          value={`${user?.targetDailyCalories ?? '—'} cal · ${user?.targetDailyProteins ?? '—'}g protein · ${user?.targetDailyWater ?? '—'}ml water`}
-          last
-        />
-      </Card>
+      <Animated.View entering={enter(2)}>
+        <SectionHeader title="Details" icon={UserIcon} />
+        <Card style={styles.detailsCard}>
+          <DetailRow label="Age" value={user?.age ? `${user.age} years` : 'Not set'} />
+          <DetailRow label="Height" value={user?.height ? `${user.height} cm` : 'Not set'} />
+          <DetailRow label="Gender" value={user?.gender ? GENDER_LABELS[user.gender] : 'Not set'} />
+          <DetailRow
+            label="Activity level"
+            value={user?.activityLevel ? ACTIVITY_LEVEL_LABELS[user.activityLevel] : 'Not set'}
+          />
+          <DetailRow
+            label="Daily targets"
+            value={`${user?.targetDailyCalories ?? '—'} cal · ${user?.targetDailyProteins ?? '—'}g protein · ${user?.targetDailyWater ?? '—'}ml water`}
+            last
+          />
+        </Card>
+      </Animated.View>
 
       {/* Menu */}
-      <SectionHeader title="Settings" icon={Ruler} />
-      <Card style={styles.menuCard}>
-        <MenuRow
-          icon={Pencil}
-          iconColor={palette.blue600}
-          iconBg={palette.blue100}
-          label="Edit Profile"
-          sublabel="Weight, goals and daily targets"
-          onPress={() => router.push('/edit-profile')}
-        />
-        <MenuRow
-          icon={Bell}
-          iconColor={palette.purple600}
-          iconBg={palette.purple100}
-          label="Reminders & Notifications"
-          sublabel="Protein and water reminders"
-          onPress={() => router.push('/reminders')}
-          bordered
-        />
-        <MenuRow
-          icon={Info}
-          iconColor={palette.emerald600}
-          iconBg={palette.emerald100}
-          label="About FitTrack"
-          sublabel="Track calories, protein and hydration"
-          onPress={() =>
-            Alert.alert(
-              'FitTrack',
-              'FitTrack mobile — companion app to the FitTrack web application. Both share the same account and data.'
-            )
-          }
-          bordered
-        />
-      </Card>
+      <Animated.View entering={enter(3)}>
+        <SectionHeader title="Settings" icon={Ruler} />
+        <Card style={styles.menuCard}>
+          <MenuRow
+            icon={Pencil}
+            iconColor={palette.blue600}
+            iconBg={palette.blue100}
+            label="Edit Profile"
+            sublabel="Weight, goals and daily targets"
+            onPress={() => router.push('/edit-profile')}
+          />
+          <MenuRow
+            icon={Bell}
+            iconColor={palette.purple600}
+            iconBg={palette.purple100}
+            label="Reminders & Notifications"
+            sublabel="Protein and water reminders"
+            onPress={() => router.push('/reminders')}
+            bordered
+          />
+          <MenuRow
+            icon={Info}
+            iconColor={palette.emerald600}
+            iconBg={palette.emerald100}
+            label="About FitTrack"
+            sublabel="Track calories, protein and hydration"
+            onPress={() =>
+              Alert.alert(
+                'FitTrack',
+                'FitTrack mobile — companion app to the FitTrack web application. Both share the same account and data.'
+              )
+            }
+            bordered
+          />
+        </Card>
 
-      <Pressable
-        onPress={confirmLogout}
-        accessibilityRole="button"
-        style={({ pressed }) => [styles.logoutButton, pressed && { opacity: 0.8 }]}>
-        <LogOut size={18} color={palette.red600} />
-        <Text style={styles.logoutText}>Log out</Text>
-      </Pressable>
+        <PressableScale
+          onPress={confirmLogout}
+          haptic="none"
+          accessibilityLabel="Log out"
+          style={styles.logoutButton}>
+          <LogOut size={layout.icon.md} color={colors.danger} />
+          <Text style={styles.logoutText}>Log out</Text>
+        </PressableScale>
+      </Animated.View>
     </Screen>
   );
 }
@@ -189,9 +206,13 @@ function StatBlock({
 }) {
   return (
     <View style={statStyles.block}>
-      <Icon size={17} color={color} />
-      <Text style={statStyles.value}>{value}</Text>
-      <Text style={statStyles.label}>{label}</Text>
+      <Icon size={layout.icon.md} color={color} strokeWidth={layout.strokeWidth} />
+      <Text style={statStyles.value} numberOfLines={1}>
+        {value}
+      </Text>
+      <Text style={statStyles.label} numberOfLines={1}>
+        {label}
+      </Text>
     </View>
   );
 }
@@ -225,23 +246,20 @@ function MenuRow({
   bordered?: boolean;
 }) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      accessibilityRole="button"
-      style={({ pressed }) => [
-        menuStyles.row,
-        bordered && menuStyles.rowBorder,
-        pressed && { backgroundColor: palette.gray50 },
-      ]}>
+      scaleTo={0.99}
+      accessibilityLabel={sublabel ? `${label}. ${sublabel}` : label}
+      style={[menuStyles.row, bordered && menuStyles.rowBorder]}>
       <View style={[menuStyles.iconBox, { backgroundColor: iconBg }]}>
-        <Icon size={17} color={iconColor} />
+        <Icon size={layout.icon.md} color={iconColor} strokeWidth={layout.strokeWidth} />
       </View>
       <View style={menuStyles.textGroup}>
         <Text style={menuStyles.label}>{label}</Text>
         {!!sublabel && <Text style={menuStyles.sublabel}>{sublabel}</Text>}
       </View>
-      <ChevronRight size={18} color={palette.gray400} />
-    </Pressable>
+      <ChevronRight size={layout.icon.md} color={colors.textFaint} />
+    </PressableScale>
   );
 }
 
@@ -249,15 +267,13 @@ const statStyles = StyleSheet.create({
   block: {
     flex: 1,
     alignItems: 'center',
-    gap: 3,
+    gap: spacing.xxs,
   },
   value: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.numberMd,
   },
   label: {
-    fontSize: 11.5,
+    ...typography.micro,
     color: colors.textMuted,
     textAlign: 'center',
   },
@@ -268,21 +284,19 @@ const detailStyles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 11,
+    paddingVertical: spacing.md,
     gap: spacing.lg,
   },
   rowBorder: {
-    borderBottomWidth: 1,
-    borderBottomColor: colors.cardBorder,
+    borderBottomWidth: layout.hairline,
+    borderBottomColor: colors.divider,
   },
   label: {
-    fontSize: 14,
+    ...typography.body,
     color: colors.textSecondary,
   },
   value: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.bodyStrong,
     flexShrink: 1,
     textAlign: 'right',
   },
@@ -296,110 +310,94 @@ const menuStyles = StyleSheet.create({
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.xs,
     borderRadius: radius.sm,
+    minHeight: layout.tapTarget,
   },
   rowBorder: {
-    borderTopWidth: 1,
-    borderTopColor: colors.cardBorder,
+    borderTopWidth: layout.hairline,
+    borderTopColor: colors.divider,
   },
   iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: radius.sm + 2,
+    width: layout.iconTile.md,
+    height: layout.iconTile.md,
+    borderRadius: radius.sm,
     alignItems: 'center',
     justifyContent: 'center',
   },
   textGroup: {
     flex: 1,
-    gap: 1,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.bodyStrong,
   },
   sublabel: {
-    fontSize: 12.5,
-    color: colors.textMuted,
+    ...typography.caption,
   },
 });
 
 const styles = StyleSheet.create({
-  header: {
-    marginBottom: spacing.lg,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: colors.text,
-  },
   identityCard: {
     alignItems: 'center',
-    gap: 6,
-    paddingVertical: spacing.xxl,
+    gap: spacing.xs,
+    paddingVertical: spacing.xl,
     marginBottom: spacing.md,
   },
   avatar: {
-    width: 72,
-    height: 72,
-    borderRadius: 36,
+    width: 60,
+    height: 60,
+    borderRadius: radius.full,
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: spacing.xs,
   },
   avatarInitial: {
-    fontSize: 30,
+    ...typography.numberXl,
     fontWeight: '800',
-    color: palette.white,
+    color: colors.onGradient,
   },
   username: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.title,
   },
   emailRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: spacing.xs,
   },
   email: {
-    fontSize: 13.5,
-    color: colors.textMuted,
+    ...typography.caption,
   },
   goalBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: spacing.xs,
     backgroundColor: palette.indigo50,
     paddingHorizontal: spacing.md,
-    paddingVertical: 5,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
     marginTop: spacing.xs,
   },
   goalBadgeText: {
-    fontSize: 12.5,
-    fontWeight: '600',
+    ...typography.captionStrong,
     color: palette.indigo600,
   },
   statsCard: {
-    marginBottom: spacing.xl,
-    paddingVertical: spacing.lg,
+    marginBottom: spacing.lg,
   },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   statDivider: {
-    width: 1,
-    height: 34,
+    width: layout.hairline,
+    height: 30,
     backgroundColor: colors.divider,
   },
   detailsCard: {
     paddingVertical: spacing.sm,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   menuCard: {
     paddingVertical: spacing.xs,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   logoutButton: {
     flexDirection: 'row',
@@ -407,14 +405,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: spacing.sm,
     backgroundColor: colors.dangerBg,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderWidth: layout.border,
+    borderColor: colors.dangerBorder,
     borderRadius: radius.md,
-    paddingVertical: 14,
+    minHeight: layout.tapTarget,
   },
   logoutText: {
-    fontSize: 15.5,
+    ...typography.bodyStrong,
     fontWeight: '700',
-    color: palette.red600,
+    color: colors.danger,
   },
 });

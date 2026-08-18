@@ -9,20 +9,23 @@ import {
   Ruler,
   Target,
   User as UserIcon,
-  UserPlus,
 } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Chip } from '@/components/Chip';
 import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
-import { colors, gradients, palette, radius, shadows, spacing } from '@/constants/theme';
+import { colors, gradients, layout, motion, radius, shadows, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
 import type { ActivityLevel, FitnessGoal, Gender } from '@/types/api';
 import { ACTIVITY_LEVEL_LABELS, FITNESS_GOAL_LABELS, GENDER_LABELS } from '@/utils/format';
+import { haptics } from '@/utils/haptics';
+import { enter } from '@/utils/motion';
 
 interface FormState {
   username: string;
@@ -125,6 +128,7 @@ export default function SignupScreen() {
 
   const goNext = () => {
     if (!validateStep(step)) return;
+    haptics.light();
     setStep((s) => s + 1);
   };
 
@@ -164,14 +168,14 @@ export default function SignupScreen() {
     <Screen keyboardAvoiding padBottom={spacing.xl}>
       {/* Header */}
       <View style={styles.header}>
-        <Pressable
+        <PressableScale
           onPress={goBack}
-          hitSlop={10}
-          accessibilityRole="button"
+          hitSlop={layout.hitSlop}
+          haptic="selection"
           accessibilityLabel={step === 0 ? 'Back to sign in' : 'Previous step'}
-          style={({ pressed }) => [styles.backButton, pressed && { opacity: 0.6 }]}>
-          <ArrowLeft size={20} color={palette.gray700} />
-        </Pressable>
+          style={styles.backButton}>
+          <ArrowLeft size={layout.icon.lg} color={colors.textSecondary} />
+        </PressableScale>
         <Text style={styles.stepCount}>
           Step {step + 1} of {STEPS.length}
         </Text>
@@ -191,19 +195,19 @@ export default function SignupScreen() {
       </View>
 
       {/* Step heading */}
-      <View style={styles.stepHeading}>
+      <Animated.View entering={enter(0)} style={styles.stepHeading}>
         <LinearGradient
           colors={gradients.brand}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={styles.stepIcon}>
-          <StepIcon size={20} color={palette.white} strokeWidth={2.2} />
+          <StepIcon size={layout.icon.lg} color={colors.onGradient} strokeWidth={layout.strokeWidth} />
         </LinearGradient>
         <View style={styles.flexOne}>
           <Text style={styles.stepTitle}>{current.title}</Text>
           <Text style={styles.stepSubtitle}>{current.subtitle}</Text>
         </View>
-      </View>
+      </Animated.View>
 
       {!!errors.general && (
         <View style={styles.errorBanner}>
@@ -211,8 +215,8 @@ export default function SignupScreen() {
         </View>
       )}
 
-      {/* Step content */}
-      <View style={styles.card}>
+      {/* Step content — cross-fades as the user moves between steps. */}
+      <Animated.View key={step} entering={FadeIn.duration(motion.duration.base)} style={styles.card}>
         {step === 0 && (
           <View style={styles.fields}>
             <Input
@@ -386,7 +390,7 @@ export default function SignupScreen() {
             />
           </View>
         )}
-      </View>
+      </Animated.View>
 
       {/* Navigation */}
       {step < STEPS.length - 1 ? (
@@ -411,13 +415,13 @@ export default function SignupScreen() {
       {step === 0 && (
         <View style={styles.footer}>
           <Text style={styles.footerText}>Already have an account?</Text>
-          <Pressable
+          <PressableScale
             onPress={() => router.replace('/login')}
-            hitSlop={8}
-            accessibilityRole="button"
-            style={({ pressed }) => pressed && { opacity: 0.6 }}>
+            hitSlop={layout.hitSlop}
+            haptic="selection"
+            accessibilityLabel="Sign in">
             <Text style={styles.footerLink}>Sign in</Text>
-          </Pressable>
+          </PressableScale>
         </View>
       )}
     </Screen>
@@ -429,69 +433,63 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    marginBottom: spacing.lg,
+    marginBottom: spacing.md,
   },
   backButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: layout.iconButton,
+    height: layout.iconButton,
+    borderRadius: radius.full,
     backgroundColor: colors.card,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: colors.cardBorder,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepCount: {
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: colors.textMuted,
+    ...typography.captionStrong,
   },
   progressRow: {
     flexDirection: 'row',
     gap: spacing.sm,
-    marginBottom: spacing.xxl,
+    marginBottom: spacing.xl,
   },
   progressSegment: {
     flex: 1,
-    height: 5,
-    borderRadius: 3,
+    height: 4,
+    borderRadius: radius.full,
   },
   progressSegmentDone: {
-    backgroundColor: palette.blue600,
+    backgroundColor: colors.primary,
   },
   progressSegmentTodo: {
-    backgroundColor: palette.gray200,
+    backgroundColor: colors.divider,
   },
   stepHeading: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
   stepIcon: {
-    width: 44,
-    height: 44,
+    width: layout.iconTile.lg,
+    height: layout.iconTile.lg,
     borderRadius: radius.md,
     alignItems: 'center',
     justifyContent: 'center',
   },
   stepTitle: {
-    fontSize: 22,
-    fontWeight: '800',
-    color: colors.text,
+    ...typography.display,
     letterSpacing: -0.3,
   },
   stepSubtitle: {
-    fontSize: 13.5,
-    color: colors.textMuted,
-    marginTop: 1,
+    ...typography.caption,
   },
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.xl,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: colors.cardBorder,
-    padding: spacing.xl,
+    padding: spacing.lg,
     ...shadows.card,
   },
   fields: {
@@ -505,9 +503,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   fieldLabel: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.labelStrong,
     marginBottom: spacing.sm,
   },
   chipRow: {
@@ -520,40 +516,39 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   divider: {
-    height: 1,
-    backgroundColor: colors.cardBorder,
+    height: layout.hairline,
+    backgroundColor: colors.divider,
     marginVertical: spacing.xs,
   },
   errorBanner: {
     backgroundColor: colors.dangerBg,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderWidth: layout.border,
+    borderColor: colors.dangerBorder,
     borderRadius: radius.md,
     padding: spacing.md,
     marginBottom: spacing.lg,
   },
   errorBannerText: {
-    color: palette.red600,
-    fontSize: 13.5,
-    lineHeight: 19,
+    ...typography.label,
+    color: colors.danger,
   },
   cta: {
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: spacing.xl,
+    marginTop: spacing.lg,
   },
   footerText: {
+    ...typography.body,
     color: colors.textMuted,
-    fontSize: 15,
   },
   footerLink: {
-    color: palette.blue600,
-    fontSize: 15,
+    ...typography.bodyStrong,
     fontWeight: '700',
+    color: colors.primary,
   },
 });

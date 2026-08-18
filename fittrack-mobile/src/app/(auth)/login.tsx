@@ -2,14 +2,17 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { ArrowRight, Lock, Mail } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
+import Animated from 'react-native-reanimated';
 
 import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
-import { colors, gradients, palette, radius, shadows, spacing } from '@/constants/theme';
+import { colors, gradients, layout, radius, shadows, spacing, typography } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/context/ToastContext';
+import { enter } from '@/utils/motion';
 
 export default function LoginScreen() {
   const { login } = useAuth();
@@ -45,7 +48,7 @@ export default function LoginScreen() {
   return (
     <Screen keyboardAvoiding padBottom={spacing.xl}>
       {/* Brand hero */}
-      <View style={styles.hero}>
+      <Animated.View entering={enter(0)} style={styles.hero}>
         <LinearGradient
           colors={gradients.brand}
           start={{ x: 0, y: 0 }}
@@ -55,10 +58,10 @@ export default function LoginScreen() {
         </LinearGradient>
         <Text style={styles.appName}>FitTrack</Text>
         <Text style={styles.tagline}>Track calories, protein & hydration</Text>
-      </View>
+      </Animated.View>
 
       {/* Form card */}
-      <View style={styles.card}>
+      <Animated.View entering={enter(1)} style={styles.card}>
         <Text style={styles.cardTitle}>Welcome back</Text>
         <Text style={styles.cardSubtitle}>Sign in to continue your progress</Text>
 
@@ -110,19 +113,19 @@ export default function LoginScreen() {
           loading={submitting}
           gradient={gradients.brand}
         />
-      </View>
+      </Animated.View>
 
       {/* Footer */}
-      <View style={styles.footer}>
+      <Animated.View entering={enter(2)} style={styles.footer}>
         <Text style={styles.footerText}>New to FitTrack?</Text>
-        <Pressable
+        <PressableScale
           onPress={() => router.push('/signup')}
-          hitSlop={8}
-          accessibilityRole="button"
-          style={({ pressed }) => pressed && { opacity: 0.6 }}>
+          hitSlop={layout.hitSlop}
+          haptic="selection"
+          accessibilityLabel="Create an account">
           <Text style={styles.footerLink}>Create an account</Text>
-        </Pressable>
-      </View>
+        </PressableScale>
+      </Animated.View>
     </Screen>
   );
 }
@@ -130,85 +133,80 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   hero: {
     alignItems: 'center',
-    marginTop: spacing.xxxl * 1.4,
-    marginBottom: spacing.xxl,
+    marginTop: spacing.xxxl,
+    marginBottom: spacing.xl,
   },
   logo: {
-    width: 76,
-    height: 76,
-    borderRadius: 22,
+    width: 64,
+    height: 64,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadows.button,
+    ...shadows.raised,
   },
   logoText: {
-    color: palette.white,
-    fontSize: 30,
+    ...typography.numberXl,
     fontWeight: '800',
+    color: colors.onGradient,
     letterSpacing: 1,
   },
   appName: {
-    fontSize: 30,
-    fontWeight: '800',
-    color: palette.indigo700,
-    marginTop: spacing.lg,
+    ...typography.brand,
+    marginTop: spacing.md,
     letterSpacing: -0.5,
   },
   tagline: {
-    fontSize: 14.5,
+    ...typography.label,
     color: colors.textMuted,
     marginTop: spacing.xs,
   },
   card: {
     backgroundColor: colors.card,
     borderRadius: radius.xl,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: colors.cardBorder,
-    padding: spacing.xxl,
+    padding: spacing.xl,
     ...shadows.card,
   },
   cardTitle: {
-    fontSize: 22,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.display,
   },
   cardSubtitle: {
-    fontSize: 14,
+    ...typography.label,
     color: colors.textMuted,
-    marginTop: 2,
+    marginTop: spacing.xxs,
   },
   fields: {
     gap: spacing.lg,
-    marginTop: spacing.xl,
-    marginBottom: spacing.xxl,
+    marginTop: spacing.lg,
+    marginBottom: spacing.xl,
   },
   errorBanner: {
     backgroundColor: colors.dangerBg,
-    borderWidth: 1,
-    borderColor: '#FECACA',
+    borderWidth: layout.border,
+    borderColor: colors.dangerBorder,
     borderRadius: radius.md,
     padding: spacing.md,
     marginTop: spacing.lg,
   },
   errorBannerText: {
-    color: palette.red600,
-    fontSize: 13.5,
-    lineHeight: 19,
+    ...typography.label,
+    color: colors.danger,
   },
   footer: {
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: spacing.sm,
-    marginTop: spacing.xxl,
+    marginTop: spacing.xl,
   },
   footerText: {
+    ...typography.body,
     color: colors.textMuted,
-    fontSize: 15,
   },
   footerLink: {
-    color: palette.blue600,
-    fontSize: 15,
+    ...typography.bodyStrong,
     fontWeight: '700',
+    color: colors.primary,
   },
 });

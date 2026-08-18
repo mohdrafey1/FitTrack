@@ -1,8 +1,14 @@
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect } from 'react';
-import { Animated, StyleSheet, useAnimatedValue, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
+import Animated, {
+  ReduceMotion,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
-import { palette, progressGradient, radius, type Gradient } from '@/constants/theme';
+import { colors, motion, progressGradient, radius, type Gradient } from '@/constants/theme';
 
 interface ProgressBarProps {
   /** 0–100 (values above 100 are clamped). */
@@ -12,32 +18,27 @@ interface ProgressBarProps {
   gradient?: Gradient;
 }
 
-export function ProgressBar({ percentage, height = 10, gradient }: ProgressBarProps) {
+export function ProgressBar({ percentage, height = 8, gradient }: ProgressBarProps) {
   const clamped = Math.max(0, Math.min(percentage, 100));
-  const widthAnim = useAnimatedValue(0);
+  const progress = useSharedValue(0);
 
   useEffect(() => {
-    Animated.timing(widthAnim, {
-      toValue: clamped,
-      duration: 500,
-      useNativeDriver: false,
-    }).start();
-  }, [clamped, widthAnim]);
+    progress.value = withTiming(clamped, {
+      duration: motion.duration.slow,
+      easing: motion.easing.standard,
+      reduceMotion: ReduceMotion.System,
+    });
+  }, [clamped, progress]);
+
+  const fillStyle = useAnimatedStyle(() => ({
+    width: `${progress.value}%`,
+  }));
 
   const fill = gradient ?? progressGradient(percentage);
 
   return (
     <View style={[styles.track, { height, borderRadius: height / 2 }]}>
-      <Animated.View
-        style={[
-          styles.fill,
-          {
-            width: widthAnim.interpolate({
-              inputRange: [0, 100],
-              outputRange: ['0%', '100%'],
-            }),
-          },
-        ]}>
+      <Animated.View style={[styles.fill, fillStyle]}>
         <LinearGradient
           colors={fill}
           start={{ x: 0, y: 0 }}
@@ -51,7 +52,7 @@ export function ProgressBar({ percentage, height = 10, gradient }: ProgressBarPr
 
 const styles = StyleSheet.create({
   track: {
-    backgroundColor: palette.gray100,
+    backgroundColor: colors.track,
     borderRadius: radius.full,
     overflow: 'hidden',
     width: '100%',

@@ -3,7 +3,7 @@ import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
 import { Card } from '@/components/Card';
-import { colors, radius, spacing } from '@/constants/theme';
+import { layout, radius, spacing, typography } from '@/constants/theme';
 
 interface StatCardProps {
   title: string;
@@ -16,26 +16,30 @@ interface StatCardProps {
   bgColor: string;
 }
 
+/**
+ * Compact metric tile: a small tinted icon chip sits inline with the label so
+ * the value gets the visual weight instead of the icon.
+ */
 export function StatCard({ title, value, subtitle, icon: Icon, color, bgColor }: StatCardProps) {
   return (
-    <Card style={styles.card}>
-      <View style={styles.row}>
-        <View style={styles.textColumn}>
-          <Text style={styles.title} numberOfLines={1}>
-            {title}
-          </Text>
-          <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
-            {value}
-          </Text>
-          {!!subtitle && (
-            <Text style={styles.subtitle} numberOfLines={1}>
-              {subtitle}
-            </Text>
-          )}
-        </View>
+    <Card compact style={styles.card}>
+      <View style={styles.labelRow}>
         <View style={[styles.iconBox, { backgroundColor: bgColor }]}>
-          <Icon size={18} color={color} strokeWidth={2.2} />
+          <Icon size={layout.icon.sm} color={color} strokeWidth={layout.strokeWidth} />
         </View>
+        <Text style={styles.title} numberOfLines={1}>
+          {title}
+        </Text>
+      </View>
+      <View style={styles.valueRow}>
+        <Text style={styles.value} numberOfLines={1} adjustsFontSizeToFit>
+          {value}
+        </Text>
+        {!!subtitle && (
+          <Text style={styles.subtitle} numberOfLines={1}>
+            {subtitle}
+          </Text>
+        )}
       </View>
     </Card>
   );
@@ -44,37 +48,34 @@ export function StatCard({ title, value, subtitle, icon: Icon, color, bgColor }:
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    padding: spacing.lg,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    justifyContent: 'space-between',
     gap: spacing.sm,
   },
-  textColumn: {
-    flex: 1,
-    gap: 2,
-  },
-  title: {
-    fontSize: 12,
-    fontWeight: '500',
-    color: colors.textMuted,
-  },
-  value: {
-    fontSize: 19,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  subtitle: {
-    fontSize: 12,
-    color: colors.textMuted,
+  labelRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
   },
   iconBox: {
-    width: 38,
-    height: 38,
-    borderRadius: radius.md,
+    width: layout.iconTile.sm,
+    height: layout.iconTile.sm,
+    borderRadius: radius.xs,
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  title: {
+    ...typography.caption,
+    flex: 1,
+  },
+  valueRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    gap: spacing.xs,
+  },
+  value: {
+    ...typography.numberMd,
+    flexShrink: 1,
+  },
+  subtitle: {
+    ...typography.caption,
   },
 });

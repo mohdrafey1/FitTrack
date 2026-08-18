@@ -1,3 +1,5 @@
+import { palette } from '@/constants/theme';
+
 export function formatNumber(value: number | undefined | null): string {
   return value ? value.toLocaleString() : '0';
 }
@@ -20,10 +22,10 @@ export function rawPercent(consumed: number, target: number): number {
 }
 
 export function bmiCategory(bmi: number): { text: string; color: string } {
-  if (bmi < 18.5) return { text: 'Underweight', color: '#2563EB' };
-  if (bmi < 25) return { text: 'Normal', color: '#16A34A' };
-  if (bmi < 30) return { text: 'Overweight', color: '#EA580C' };
-  return { text: 'Obese', color: '#DC2626' };
+  if (bmi < 18.5) return { text: 'Underweight', color: palette.blue600 };
+  if (bmi < 25) return { text: 'Normal', color: palette.green600 };
+  if (bmi < 30) return { text: 'Overweight', color: palette.orange600 };
+  return { text: 'Obese', color: palette.red600 };
 }
 
 export const ACTIVITY_LEVEL_LABELS: Record<string, string> = {

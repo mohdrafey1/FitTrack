@@ -2,9 +2,10 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { TrendingUp, type LucideIcon } from 'lucide-react-native';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn } from 'react-native-reanimated';
 
 import { Card } from '@/components/Card';
-import { colors, palette, spacing, type Gradient } from '@/constants/theme';
+import { colors, layout, motion, radius, spacing, typography, type Gradient } from '@/constants/theme';
 import { formatShortDate } from '@/utils/date';
 
 interface BarChartProps {
@@ -18,7 +19,7 @@ interface BarChartProps {
   target?: number;
 }
 
-const CHART_HEIGHT = 132;
+const CHART_HEIGHT = 104;
 
 /** Lightweight dependency-free bar chart matching the web app's trend charts. */
 export function BarChart({ title, icon: Icon, gradient, data, unit, target }: BarChartProps) {
@@ -30,10 +31,10 @@ export function BarChart({ title, icon: Icon, gradient, data, unit, target }: Ba
     <Card style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titleGroup}>
-          <Icon size={16} color={palette.gray600} />
+          <Icon size={layout.icon.md} color={colors.textMuted} strokeWidth={layout.strokeWidth} />
           <Text style={styles.title}>{title}</Text>
         </View>
-        <TrendingUp size={16} color={palette.gray400} />
+        <TrendingUp size={layout.icon.sm} color={colors.textFaint} />
       </View>
 
       {chartData.length === 0 ? (
@@ -44,15 +45,10 @@ export function BarChart({ title, icon: Icon, gradient, data, unit, target }: Ba
         <View>
           <View style={styles.plotArea}>
             {target !== undefined && target > 0 && target <= maxValue && (
-              <View
-                style={[
-                  styles.targetLine,
-                  { bottom: (target / maxValue) * CHART_HEIGHT },
-                ]}
-              />
+              <View style={[styles.targetLine, { bottom: (target / maxValue) * CHART_HEIGHT }]} />
             )}
             {chartData.map((item, index) => {
-              const barHeight = Math.max((item.value / maxValue) * CHART_HEIGHT, 4);
+              const barHeight = Math.max((item.value / maxValue) * CHART_HEIGHT, 3);
               return (
                 <View key={`${item.date}-${index}`} style={styles.barColumn}>
                   <Text style={styles.barValue} numberOfLines={1}>
@@ -60,12 +56,16 @@ export function BarChart({ title, icon: Icon, gradient, data, unit, target }: Ba
                       ? `${(item.value / 1000).toFixed(1)}k`
                       : Math.round(item.value * 10) / 10}
                   </Text>
-                  <LinearGradient
-                    colors={gradient}
-                    start={{ x: 0, y: 1 }}
-                    end={{ x: 0, y: 0 }}
-                    style={[styles.bar, { height: barHeight }]}
-                  />
+                  <Animated.View
+                    entering={FadeIn.duration(motion.duration.base).delay(index * motion.stagger)}
+                    style={styles.barWrapper}>
+                    <LinearGradient
+                      colors={gradient}
+                      start={{ x: 0, y: 1 }}
+                      end={{ x: 0, y: 0 }}
+                      style={[styles.bar, { height: barHeight }]}
+                    />
+                  </Animated.View>
                 </View>
               );
             })}
@@ -102,9 +102,7 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   title: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.subheading,
   },
   empty: {
     height: CHART_HEIGHT,
@@ -112,54 +110,55 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   emptyText: {
-    fontSize: 13,
+    ...typography.caption,
     color: colors.textFaint,
   },
   plotArea: {
-    height: CHART_HEIGHT + 18,
+    height: CHART_HEIGHT + 16,
     flexDirection: 'row',
     alignItems: 'flex-end',
-    gap: 6,
+    gap: spacing.xs,
   },
   targetLine: {
     position: 'absolute',
     left: 0,
     right: 0,
-    borderTopWidth: 1.5,
-    borderColor: palette.gray400,
+    borderTopWidth: 1,
+    borderColor: colors.textFaint,
     borderStyle: 'dashed',
     zIndex: 1,
   },
   barColumn: {
     flex: 1,
     alignItems: 'center',
-    gap: 3,
+    gap: spacing.xxs,
   },
   barValue: {
-    fontSize: 9.5,
-    fontWeight: '600',
+    ...typography.micro,
     color: colors.textMuted,
   },
+  barWrapper: {
+    width: '100%',
+    alignItems: 'center',
+  },
   bar: {
-    width: '68%',
-    borderTopLeftRadius: 6,
-    borderTopRightRadius: 6,
-    minWidth: 14,
+    width: '70%',
+    minWidth: 12,
+    borderTopLeftRadius: radius.xs,
+    borderTopRightRadius: radius.xs,
   },
   axis: {
     flexDirection: 'row',
-    gap: 6,
-    marginTop: 4,
+    gap: spacing.xs,
+    marginTop: spacing.xs,
   },
   axisLabel: {
+    ...typography.micro,
     flex: 1,
-    fontSize: 9.5,
-    color: colors.textFaint,
     textAlign: 'center',
   },
   unitHint: {
-    fontSize: 11,
-    color: colors.textFaint,
-    marginTop: 2,
+    ...typography.micro,
+    marginTop: spacing.xxs,
   },
 });

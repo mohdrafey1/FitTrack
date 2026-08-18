@@ -1,7 +1,8 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
+import { StyleSheet, Text, type StyleProp, type ViewStyle } from 'react-native';
 
-import { colors, palette, radius, spacing } from '@/constants/theme';
+import { PressableScale } from '@/components/PressableScale';
+import { colors, layout, radius, spacing, typography } from '@/constants/theme';
 
 interface ChipProps {
   label: string;
@@ -19,25 +20,24 @@ export function Chip({
   selected,
   onPress,
   sublabel,
-  selectedColor = palette.blue600,
+  selectedColor = colors.primary,
   style,
 }: ChipProps) {
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
-      accessibilityRole="button"
+      haptic="selection"
       accessibilityState={{ selected }}
-      style={({ pressed }) => [
+      style={[
         styles.chip,
         selected && { backgroundColor: selectedColor, borderColor: selectedColor },
-        pressed && styles.pressed,
         style,
       ]}>
       <Text style={[styles.label, selected && styles.labelSelected]}>{label}</Text>
       {!!sublabel && (
         <Text style={[styles.sublabel, selected && styles.sublabelSelected]}>{sublabel}</Text>
       )}
-    </Pressable>
+    </PressableScale>
   );
 }
 
@@ -45,30 +45,24 @@ const styles = StyleSheet.create({
   chip: {
     alignItems: 'center',
     justifyContent: 'center',
-    paddingVertical: 9,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.md,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: colors.inputBorder,
-    backgroundColor: palette.white,
-  },
-  pressed: {
-    opacity: 0.85,
+    backgroundColor: colors.card,
   },
   label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: colors.textSecondary,
+    ...typography.labelStrong,
   },
   labelSelected: {
-    color: palette.white,
+    color: colors.onGradient,
   },
   sublabel: {
-    fontSize: 12,
-    color: colors.textMuted,
-    marginTop: 1,
+    ...typography.caption,
+    marginTop: spacing.xxs,
   },
   sublabelSelected: {
-    color: 'rgba(255,255,255,0.85)',
+    color: colors.onGradientMuted,
   },
 });

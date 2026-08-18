@@ -2,7 +2,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 
-import { gradients, palette, spacing } from '@/constants/theme';
+import { colors, gradients, palette, spacing, typography } from '@/constants/theme';
 
 interface BrandMarkProps {
   size?: number;
@@ -11,7 +11,7 @@ interface BrandMarkProps {
 }
 
 /** The FitTrack "FT" gradient logo used across the web app. */
-export function BrandMark({ size = 34, withWordmark = false }: BrandMarkProps) {
+export function BrandMark({ size = 30, withWordmark = false }: BrandMarkProps) {
   return (
     <View style={styles.row}>
       <LinearGradient
@@ -36,16 +36,15 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.md,
+    gap: spacing.sm,
   },
   initials: {
-    color: palette.white,
+    color: colors.onGradient,
     fontWeight: '800',
     letterSpacing: 0.5,
   },
   wordmark: {
-    fontSize: 22,
-    fontWeight: '800',
+    ...typography.title,
     color: palette.indigo700,
   },
 });

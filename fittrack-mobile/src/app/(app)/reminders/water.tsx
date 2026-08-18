@@ -10,7 +10,7 @@ import { Input } from '@/components/Input';
 import { ModalHeader } from '@/components/ModalHeader';
 import { Screen } from '@/components/Screen';
 import { TimePickerField } from '@/components/TimePickerField';
-import { colors, gradients, palette, radius, spacing } from '@/constants/theme';
+import { colors, gradients, layout, palette, radius, spacing, typography } from '@/constants/theme';
 import { useReminders } from '@/context/RemindersContext';
 import { useToast } from '@/context/ToastContext';
 import { computeWaterSlots } from '@/notifications/scheduler';
@@ -122,15 +122,15 @@ export default function WaterReminderScreen() {
         <View style={styles.switchRow}>
           <View style={styles.switchLabelGroup}>
             <View style={styles.waterIcon}>
-              <Droplets size={17} color={palette.white} />
+              <Droplets size={layout.icon.md} color={colors.onGradient} />
             </View>
             <Text style={styles.switchLabel}>Water reminders</Text>
           </View>
           <Switch
             value={enabled}
             onValueChange={setEnabled}
-            trackColor={{ false: palette.gray200, true: palette.blue500 }}
-            thumbColor={palette.white}
+            trackColor={{ false: colors.divider, true: palette.blue500 }}
+            thumbColor={colors.card}
           />
         </View>
       </Card>
@@ -238,14 +238,13 @@ const styles = StyleSheet.create({
     marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 15,
-    fontWeight: '700',
-    color: colors.text,
+    ...typography.heading,
   },
   switchRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: layout.tapTarget,
   },
   switchLabelGroup: {
     flexDirection: 'row',
@@ -253,17 +252,15 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   waterIcon: {
-    width: 34,
-    height: 34,
-    borderRadius: radius.sm + 2,
+    width: layout.iconTile.md,
+    height: layout.iconTile.md,
+    borderRadius: radius.sm,
     backgroundColor: palette.blue500,
     alignItems: 'center',
     justifyContent: 'center',
   },
   switchLabel: {
-    fontSize: 15.5,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.bodyStrong,
   },
   intervalRow: {
     flexDirection: 'row',
@@ -274,12 +271,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   divider: {
-    height: 1,
-    backgroundColor: colors.cardBorder,
+    height: layout.hairline,
+    backgroundColor: colors.divider,
   },
   errorText: {
-    fontSize: 13,
-    color: palette.red600,
+    ...typography.caption,
+    color: colors.danger,
   },
   slotWrap: {
     flexDirection: 'row',
@@ -288,15 +285,14 @@ const styles = StyleSheet.create({
   },
   slotChip: {
     backgroundColor: palette.blue50,
-    borderWidth: 1,
+    borderWidth: layout.border,
     borderColor: palette.blue100,
     borderRadius: radius.full,
     paddingHorizontal: spacing.md,
-    paddingVertical: 5,
+    paddingVertical: spacing.xs,
   },
   slotText: {
-    fontSize: 12.5,
-    fontWeight: '600',
+    ...typography.captionStrong,
     color: palette.blue700,
   },
 });

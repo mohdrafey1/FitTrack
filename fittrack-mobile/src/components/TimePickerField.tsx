@@ -3,9 +3,10 @@ import DateTimePicker, {
 } from '@react-native-community/datetimepicker';
 import { Clock } from 'lucide-react-native';
 import React, { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
-import { colors, palette, radius, spacing } from '@/constants/theme';
+import { PressableScale } from '@/components/PressableScale';
+import { colors, layout, radius, spacing, typography } from '@/constants/theme';
 import { formatClockTime } from '@/utils/date';
 
 interface TimePickerFieldProps {
@@ -35,7 +36,7 @@ export function TimePickerField({ label, hour, minute, onChange }: TimePickerFie
   return (
     <View style={styles.row}>
       <View style={styles.labelGroup}>
-        <Clock size={17} color={palette.gray500} />
+        <Clock size={layout.icon.md} color={colors.textMuted} />
         <Text style={styles.label}>{label}</Text>
       </View>
 
@@ -49,13 +50,13 @@ export function TimePickerField({ label, hour, minute, onChange }: TimePickerFie
         />
       ) : (
         <>
-          <Pressable
+          <PressableScale
             onPress={() => setShowAndroidPicker(true)}
-            accessibilityRole="button"
+            haptic="selection"
             accessibilityLabel={`${label}: ${formatClockTime(hour, minute)}`}
-            style={({ pressed }) => [styles.timeButton, pressed && { opacity: 0.8 }]}>
+            style={styles.timeButton}>
             <Text style={styles.timeText}>{formatClockTime(hour, minute)}</Text>
-          </Pressable>
+          </PressableScale>
           {showAndroidPicker && (
             <DateTimePicker value={value} mode="time" display="default" onChange={handleChange} />
           )}
@@ -70,7 +71,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    minHeight: 44,
+    minHeight: layout.tapTarget,
   },
   labelGroup: {
     flexDirection: 'row',
@@ -78,19 +79,18 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   label: {
-    fontSize: 15,
-    fontWeight: '500',
+    ...typography.body,
     color: colors.textSecondary,
   },
   timeButton: {
-    backgroundColor: palette.gray100,
+    backgroundColor: colors.fill,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
+    minHeight: 36,
+    justifyContent: 'center',
   },
   timeText: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: colors.text,
+    ...typography.bodyStrong,
   },
 });
