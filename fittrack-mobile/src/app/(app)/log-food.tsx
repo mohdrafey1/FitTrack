@@ -1,7 +1,16 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { ChevronLeft, PackagePlus, Plus, Search, UtensilsCrossed } from 'lucide-react-native';
+import {
+  ChevronLeft,
+  ListOrdered,
+  PackagePlus,
+  Pencil,
+  Plus,
+  Search,
+  Trash2,
+  UtensilsCrossed,
+} from 'lucide-react-native';
 import React, { useCallback, useMemo, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, LinearTransition } from 'react-native-reanimated';
 
 import { getApiErrorMessage } from '@/api/client';
@@ -13,10 +22,12 @@ import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
 import { ModalHeader } from '@/components/ModalHeader';
 import { PressableScale } from '@/components/PressableScale';
+import { ReorderableList } from '@/components/ReorderableList';
 import { Screen } from '@/components/Screen';
 import { colors, gradients, layout, motion, palette, radius, spacing, typography } from '@/constants/theme';
 import { useToast } from '@/context/ToastContext';
 import { foodDatabase, calculateMacros } from '@/data/foodDatabase';
+import { applyFoodOrder, useFoodOrder } from '@/hooks/useFoodOrder';
 import { haptics } from '@/utils/haptics';
 import type { CustomFood, ServingSizes } from '@/types/api';
 
@@ -39,6 +50,9 @@ interface SelectableFood {
 
 type ServingChoice = keyof ServingSizes | 'custom';
 
+/** Manage rows are absolutely positioned, so they must all be this tall. */
+const MANAGE_ROW_HEIGHT = 56;
+
 export default function LogFoodScreen() {
   const router = useRouter();
   const { showToast } = useToast();
@@ -49,6 +63,13 @@ export default function LogFoodScreen() {
   const [serving, setServing] = useState<ServingChoice>('medium');
   const [customGrams, setCustomGrams] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Manage mode: reorder the list and edit or remove your own foods. Kept
+  // separate from browsing so a delete button never sits next to the row you
+  // tap to log a meal.
+  const [managing, setManaging] = useState(false);
+  const [dragging, setDragging] = useState(false);
+  const { order, saveOrder } = useFoodOrder();
 
   // (Re)load custom foods whenever this screen gains focus, so foods created
   // in the "New custom food" modal appear immediately.
@@ -99,14 +120,25 @@ export default function LogFoodScreen() {
     return [...builtIn, ...custom];
   }, [customFoods]);
 
+  /** The list in the order the user arranged, newcomers appended. */
+  const orderedFoods = useMemo(
+    () => applyFoodOrder(allFoods, (food) => food.key, order),
+    [allFoods, order]
+  );
+
+  const foodByKey = useMemo(
+    () => new Map(orderedFoods.map((food) => [food.key, food])),
+    [orderedFoods]
+  );
+
   const filteredFoods = useMemo(() => {
     const query = searchTerm.trim().toLowerCase();
-    if (!query) return allFoods;
-    return allFoods.filter(
+    if (!query) return orderedFoods;
+    return orderedFoods.filter(
       (food) =>
         food.name.toLowerCase().includes(query) || food.category.toLowerCase().includes(query)
     );
-  }, [allFoods, searchTerm]);
+  }, [orderedFoods, searchTerm]);
 
   const quantityGrams = useMemo(() => {
     if (!selected) return 0;
@@ -124,6 +156,43 @@ export default function LogFoodScreen() {
     if (macros.calories <= 0) return null;
     return macros;
   }, [selected, quantityGrams]);
+
+  const toggleManaging = () => {
+    setManaging((value) => !value);
+    setSearchTerm('');
+  };
+
+  const editFood = (food: SelectableFood) => {
+    if (!food.customId) return;
+    router.push({ pathname: '/create-food', params: { id: food.customId } });
+  };
+
+  const confirmDeleteFood = (food: SelectableFood) => {
+    if (!food.customId) return;
+    Alert.alert(
+      'Delete food',
+      `Delete ${food.name}? Meals you already logged with it are not affected.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            haptics.warning();
+            try {
+              await customFoodsApi.remove(food.customId as string);
+              setCustomFoods((foods) => foods.filter((item) => item._id !== food.customId));
+              // Drop the dead key so the saved order cannot accumulate junk.
+              saveOrder(order.filter((key) => key !== food.key));
+              showToast(`${food.name} deleted`);
+            } catch (error) {
+              showToast(getApiErrorMessage(error, 'Failed to delete food'), 'error');
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const selectFood = (food: SelectableFood) => {
     setSelected(food);
@@ -162,7 +231,7 @@ export default function LogFoodScreen() {
   };
 
   return (
-    <Screen keyboardAvoiding padTop={Platform.OS === 'android'}>
+    <Screen keyboardAvoiding padTop={Platform.OS === 'android'} scrollEnabled={!dragging}>
       <View style={styles.topSpacer} />
       <ModalHeader
         title="Add Food"
@@ -181,6 +250,80 @@ export default function LogFoodScreen() {
 
       {!selected ? (
         <>
+          <View style={styles.listHeader}>
+            <Text style={styles.listHeaderTitle}>
+              {managing ? 'Reorder & edit' : 'Foods'}
+            </Text>
+            <PressableScale
+              onPress={toggleManaging}
+              haptic="selection"
+              accessibilityLabel={managing ? 'Finish managing foods' : 'Manage foods'}
+              style={styles.manageButton}>
+              {!managing && (
+                <ListOrdered size={layout.icon.sm} color={colors.textSecondary} />
+              )}
+              <Text style={[styles.manageText, managing && styles.manageTextActive]}>
+                {managing ? 'Done' : 'Manage'}
+              </Text>
+            </PressableScale>
+          </View>
+
+          {managing ? (
+            <>
+              <Text style={styles.manageHint}>
+                Hold a grip to drag a food into place. Your order is saved on this device
+                only.
+              </Text>
+              <Card style={styles.listCard}>
+                <ReorderableList
+                  itemKeys={orderedFoods.map((food) => food.key)}
+                  rowHeight={MANAGE_ROW_HEIGHT}
+                  onReorder={saveOrder}
+                  onDragActiveChange={setDragging}
+                  renderRow={(key, handle) => {
+                    const food = foodByKey.get(key);
+                    if (!food) return null;
+                    return (
+                      <View style={styles.manageRow}>
+                        {handle}
+                        <View style={styles.foodInfo}>
+                          <Text style={styles.foodName} numberOfLines={1}>
+                            {food.name}
+                          </Text>
+                          <Text style={styles.foodCategory} numberOfLines={1}>
+                            {food.category}
+                          </Text>
+                        </View>
+                        {food.isCustom ? (
+                          <View style={styles.manageActions}>
+                            <PressableScale
+                              onPress={() => editFood(food)}
+                              haptic="selection"
+                              hitSlop={layout.hitSlop}
+                              accessibilityLabel={`Edit ${food.name}`}
+                              style={styles.manageAction}>
+                              <Pencil size={layout.icon.md} color={colors.primary} />
+                            </PressableScale>
+                            <PressableScale
+                              onPress={() => confirmDeleteFood(food)}
+                              haptic="none"
+                              hitSlop={layout.hitSlop}
+                              accessibilityLabel={`Delete ${food.name}`}
+                              style={styles.manageAction}>
+                              <Trash2 size={layout.icon.md} color={colors.danger} />
+                            </PressableScale>
+                          </View>
+                        ) : (
+                          <Text style={styles.builtInTag}>Built-in</Text>
+                        )}
+                      </View>
+                    );
+                  }}
+                />
+              </Card>
+            </>
+          ) : (
+            <>
           <Input
             value={searchTerm}
             onChangeText={setSearchTerm}
@@ -236,6 +379,8 @@ export default function LogFoodScreen() {
                 />
               </View>
             </Card>
+          )}
+            </>
           )}
         </>
       ) : (
@@ -371,6 +516,57 @@ const styles = StyleSheet.create({
   },
   searchField: {
     marginBottom: spacing.md,
+  },
+  listHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  listHeaderTitle: {
+    ...typography.heading,
+  },
+  manageButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    backgroundColor: colors.fill,
+    minHeight: layout.iconButton,
+  },
+  manageText: {
+    ...typography.captionStrong,
+  },
+  manageTextActive: {
+    color: colors.primary,
+    fontWeight: '700',
+  },
+  manageHint: {
+    ...typography.caption,
+    marginBottom: spacing.md,
+  },
+  manageRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    height: MANAGE_ROW_HEIGHT,
+    paddingRight: spacing.xs,
+  },
+  manageActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  manageAction: {
+    width: layout.iconTile.md,
+    height: layout.iconTile.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  builtInTag: {
+    ...typography.micro,
   },
   listCard: {
     paddingVertical: spacing.xs,

@@ -15,8 +15,18 @@ export const customFoodsApi = {
     return data.data;
   },
 
+  async getById(id: string): Promise<CustomFood> {
+    const { data } = await api.get<ApiEnvelope<CustomFood>>(`/api/custom-foods/${id}`);
+    return data.data;
+  },
+
   async create(payload: CreateCustomFoodPayload): Promise<CustomFood> {
     const { data } = await api.post<ApiEnvelope<CustomFood>>('/api/custom-foods', payload);
+    return data.data;
+  },
+
+  async update(id: string, payload: Partial<CreateCustomFoodPayload>): Promise<CustomFood> {
+    const { data } = await api.put<ApiEnvelope<CustomFood>>(`/api/custom-foods/${id}`, payload);
     return data.data;
   },
 

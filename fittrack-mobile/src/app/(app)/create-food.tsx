@@ -1,5 +1,5 @@
-import { useRouter } from 'expo-router';
-import { PackagePlus, Sparkles } from 'lucide-react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { PackagePlus, Save, Sparkles } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
 import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
@@ -84,6 +84,11 @@ export default function CreateFoodScreen() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // Passing an id turns this screen into an editor for that custom food.
+  const { id } = useLocalSearchParams<{ id?: string }>();
+  const isEditing = Boolean(id);
+  const [loadingFood, setLoadingFood] = useState(isEditing);
+
   // AI fill: which fields hold an estimate rather than a typed value, what
   // the model reported about it, and whether the server offers the feature.
   const [aiFields, setAiFields] = useState<ReadonlySet<keyof FormState>>(new Set());
@@ -97,6 +102,42 @@ export default function CreateFoodScreen() {
       .then(setCategories)
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (!id) return;
+    let cancelled = false;
+    customFoodsApi
+      .getById(id)
+      .then((food) => {
+        if (cancelled) return;
+        setForm({
+          name: food.name,
+          category: food.category,
+          calories: String(food.calories),
+          protein: String(food.protein),
+          carbs: String(food.carbs),
+          fat: String(food.fat),
+          fiber: String(food.fiber ?? 0),
+          sugar: String(food.sugar ?? 0),
+          brand: food.brand ?? '',
+          description: food.description ?? '',
+          small: String(food.servingSizes?.small ?? 50),
+          medium: String(food.servingSizes?.medium ?? 100),
+          large: String(food.servingSizes?.large ?? 150),
+        });
+      })
+      .catch((error) => {
+        if (cancelled) return;
+        showToast(getApiErrorMessage(error, 'Could not load that food'), 'error');
+        router.back();
+      })
+      .finally(() => {
+        if (!cancelled) setLoadingFood(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id, router, showToast]);
 
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
@@ -207,7 +248,7 @@ export default function CreateFoodScreen() {
     if (!validate() || submitting) return;
     setSubmitting(true);
     try {
-      await customFoodsApi.create({
+      const payload = {
         name: form.name.trim(),
         category: form.category,
         calories: parseFloat(form.calories),
@@ -223,12 +264,22 @@ export default function CreateFoodScreen() {
           medium: parseFloat(form.medium),
           large: parseFloat(form.large),
         },
-      });
+      };
+
+      if (id) {
+        await customFoodsApi.update(id, payload);
+      } else {
+        await customFoodsApi.create(payload);
+      }
+
       haptics.success();
-      showToast(`${form.name.trim()} created`);
+      showToast(`${form.name.trim()} ${id ? 'updated' : 'created'}`);
       router.back();
     } catch (error) {
-      showToast(getApiErrorMessage(error, 'Failed to create food'), 'error');
+      showToast(
+        getApiErrorMessage(error, `Failed to ${id ? 'update' : 'create'} food`),
+        'error'
+      );
     } finally {
       setSubmitting(false);
     }
@@ -237,7 +288,17 @@ export default function CreateFoodScreen() {
   return (
     <Screen keyboardAvoiding padTop={Platform.OS === 'android'}>
       <View style={styles.topSpacer} />
-      <ModalHeader title="New Custom Food" subtitle="Nutrition values are per 100g" />
+      <ModalHeader
+        title={isEditing ? 'Edit Custom Food' : 'New Custom Food'}
+        subtitle="Nutrition values are per 100g"
+      />
+
+      {loadingFood && (
+        <View style={styles.loadingRow}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={styles.loadingText}>Loading food…</Text>
+        </View>
+      )}
 
       <Card style={styles.section}>
         <Input
@@ -429,11 +490,12 @@ export default function CreateFoodScreen() {
       </Card>
 
       <GradientButton
-        label="Create Food"
-        icon={PackagePlus}
+        label={isEditing ? 'Save Changes' : 'Create Food'}
+        icon={isEditing ? Save : PackagePlus}
         gradient={gradients.calories}
         onPress={handleSubmit}
         loading={submitting}
+        disabled={loadingFood}
       />
     </Screen>
   );
@@ -465,6 +527,16 @@ const styles = StyleSheet.create({
   },
   flexOne: {
     flex: 1,
+  },
+  loadingRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    paddingVertical: spacing.lg,
+    justifyContent: 'center',
+  },
+  loadingText: {
+    ...typography.caption,
   },
   aiBlock: {
     gap: spacing.sm,

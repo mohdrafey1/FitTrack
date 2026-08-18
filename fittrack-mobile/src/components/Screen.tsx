@@ -23,6 +23,8 @@ interface ScreenProps {
   /** Extra bottom padding so content clears the tab bar / home indicator. */
   padBottom?: number;
   keyboardAvoiding?: boolean;
+  /** Freeze scrolling — used while a drag-to-reorder gesture owns the touch. */
+  scrollEnabled?: boolean;
 }
 
 /** Full-screen FitTrack gradient background with safe-area handling. */
@@ -34,6 +36,7 @@ export function Screen({
   padTop = true,
   padBottom = spacing.xxxl,
   keyboardAvoiding = false,
+  scrollEnabled = true,
 }: ScreenProps) {
   const insets = useSafeAreaInsets();
 
@@ -45,6 +48,7 @@ export function Screen({
         { paddingTop: padTop ? insets.top + spacing.md : spacing.md },
         { paddingBottom: padBottom + insets.bottom },
       ]}
+      scrollEnabled={scrollEnabled}
       keyboardShouldPersistTaps="handled"
       // Lets iOS inset the scroll view for the keyboard natively — more
       // reliable than wrapping a ScrollView in KeyboardAvoidingView.

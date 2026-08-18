@@ -3,6 +3,8 @@ import { router, Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { StyleSheet } from 'react-native';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { UpdateBanner } from '@/components/UpdateBanner';
@@ -76,16 +78,24 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <AuthProvider>
-        <RemindersProvider>
-          <ToastProvider>
-            <StatusBar style="dark" />
-            <RootNavigator />
-            <UpdateBanner />
-          </ToastProvider>
-        </RemindersProvider>
-      </AuthProvider>
-    </SafeAreaProvider>
+    // Required by react-native-gesture-handler: every gesture must be inside
+    // this view. It wraps the whole tree so modal screens are covered too.
+    <GestureHandlerRootView style={styles.root}>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <RemindersProvider>
+            <ToastProvider>
+              <StatusBar style="dark" />
+              <RootNavigator />
+              <UpdateBanner />
+            </ToastProvider>
+          </RemindersProvider>
+        </AuthProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }
+
+const styles = StyleSheet.create({
+  root: { flex: 1 },
+});
