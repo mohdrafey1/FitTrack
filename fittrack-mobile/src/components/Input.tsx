@@ -21,6 +21,12 @@ interface InputProps extends TextInputProps {
   password?: boolean;
   /** Optional leading icon shown inside the field. */
   icon?: LucideIcon;
+  /**
+   * Tints the field to mark a value the user did not type (an AI estimate).
+   * Only border and background colours change — never shadow or elevation,
+   * which would recreate the native view and drop keyboard focus on Android.
+   */
+  highlighted?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
 }
 
@@ -30,6 +36,7 @@ export function Input({
   hint,
   password = false,
   icon: Icon,
+  highlighted = false,
   containerStyle,
   style,
   ...rest
@@ -43,6 +50,7 @@ export function Input({
       <View
         style={[
           styles.inputWrapper,
+          highlighted && styles.inputWrapperHighlighted,
           focused && styles.inputWrapperFocused,
           !!error && styles.inputWrapperError,
         ]}>
@@ -125,6 +133,10 @@ const styles = StyleSheet.create({
   },
   inputWrapperError: {
     borderColor: colors.danger,
+  },
+  inputWrapperHighlighted: {
+    borderColor: colors.accentBorder,
+    backgroundColor: colors.accentBg,
   },
   leadingIcon: {
     paddingLeft: spacing.md,

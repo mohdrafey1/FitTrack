@@ -195,3 +195,31 @@ export interface AddFoodPayload {
   servingSize?: string;
   isCustomFood?: boolean;
 }
+
+/** Per-100g nutrition estimated by the server's AI lookup. */
+export interface AiNutritionSuggestion {
+  category: FoodCategory;
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  fiber: number;
+  sugar: number;
+  /** Empty string when the food is not a branded product. */
+  brand: string;
+  servingSizes: ServingSizes;
+}
+
+export interface AiSuggestionMeta {
+  model: string;
+  confidence: 'high' | 'medium' | 'low';
+  /** What the model assumed (preparation, cut…). May be empty. */
+  note: string;
+  /** Corrections the server applied to make the values internally consistent. */
+  adjustments: string[];
+}
+
+export interface AiSuggestionResult {
+  data: AiNutritionSuggestion;
+  meta: AiSuggestionMeta;
+}

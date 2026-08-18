@@ -73,6 +73,11 @@ interface BackendErrorBody {
   details?: { msg?: string }[];
 }
 
+/** HTTP status of an API error, or undefined for network/timeout failures. */
+export function getApiErrorStatus(error: unknown): number | undefined {
+  return isAxiosError(error) ? error.response?.status : undefined;
+}
+
 /** Extract a human-readable message from any API error. */
 export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong'): string {
   if (isAxiosError(error)) {

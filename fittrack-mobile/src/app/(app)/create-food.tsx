@@ -1,19 +1,30 @@
 import { useRouter } from 'expo-router';
-import { PackagePlus } from 'lucide-react-native';
+import { PackagePlus, Sparkles } from 'lucide-react-native';
 import React, { useEffect, useState } from 'react';
-import { Platform, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, View } from 'react-native';
+import Animated, { FadeIn, FadeOut, LinearTransition } from 'react-native-reanimated';
 
-import { getApiErrorMessage } from '@/api/client';
+import { getApiErrorMessage, getApiErrorStatus } from '@/api/client';
 import { customFoodsApi } from '@/api/customFoods';
 import { Card } from '@/components/Card';
 import { Chip } from '@/components/Chip';
 import { GradientButton } from '@/components/GradientButton';
 import { Input } from '@/components/Input';
 import { ModalHeader } from '@/components/ModalHeader';
+import { PressableScale } from '@/components/PressableScale';
 import { Screen } from '@/components/Screen';
-import { gradients, palette, spacing, typography } from '@/constants/theme';
+import {
+  colors,
+  gradients,
+  layout,
+  motion,
+  palette,
+  radius,
+  spacing,
+  typography,
+} from '@/constants/theme';
 import { useToast } from '@/context/ToastContext';
-import type { CategoryOption, FoodCategory } from '@/types/api';
+import type { AiSuggestionMeta, CategoryOption, FoodCategory } from '@/types/api';
 import { haptics } from '@/utils/haptics';
 
 /** Fallback if the categories endpoint is unreachable (matches the backend list). */
@@ -41,6 +52,7 @@ interface FormState {
   fiber: string;
   sugar: string;
   brand: string;
+  description: string;
   small: string;
   medium: string;
   large: string;
@@ -58,6 +70,7 @@ const INITIAL_FORM: FormState = {
   fiber: '0',
   sugar: '0',
   brand: '',
+  description: '',
   small: '50',
   medium: '100',
   large: '150',
@@ -71,6 +84,13 @@ export default function CreateFoodScreen() {
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
 
+  // AI fill: which fields hold an estimate rather than a typed value, what
+  // the model reported about it, and whether the server offers the feature.
+  const [aiFields, setAiFields] = useState<ReadonlySet<keyof FormState>>(new Set());
+  const [aiMeta, setAiMeta] = useState<AiSuggestionMeta | null>(null);
+  const [aiBusy, setAiBusy] = useState(false);
+  const [aiUnavailable, setAiUnavailable] = useState(false);
+
   useEffect(() => {
     customFoodsApi
       .getCategories()
@@ -81,6 +101,70 @@ export default function CreateFoodScreen() {
   const set = <K extends keyof FormState>(key: K, value: FormState[K]) => {
     setForm((f) => ({ ...f, [key]: value }));
     if (errors[key]) setErrors((e) => ({ ...e, [key]: undefined }));
+    // Once the user edits a field it is theirs, not the model’s.
+    setAiFields((prev) => {
+      if (!prev.has(key)) return prev;
+      const next = new Set(prev);
+      next.delete(key);
+      return next;
+    });
+  };
+
+  const handleAiFill = async () => {
+    if (aiBusy) return;
+    const name = form.name.trim();
+    if (name.length < 2) {
+      setErrors((e) => ({ ...e, name: 'Enter a food name first' }));
+      return;
+    }
+
+    setAiBusy(true);
+    try {
+      const { data, meta } = await customFoodsApi.aiSuggest(name, form.description.trim());
+
+      setForm((f) => ({
+        ...f,
+        category: data.category,
+        calories: String(data.calories),
+        protein: String(data.protein),
+        carbs: String(data.carbs),
+        fat: String(data.fat),
+        fiber: String(data.fiber),
+        sugar: String(data.sugar),
+        small: String(data.servingSizes.small),
+        medium: String(data.servingSizes.medium),
+        large: String(data.servingSizes.large),
+        // Never overwrite a brand the user typed themselves.
+        brand: f.brand.trim() ? f.brand : data.brand,
+      }));
+
+      const filled: (keyof FormState)[] = [
+        'calories',
+        'protein',
+        'carbs',
+        'fat',
+        'fiber',
+        'sugar',
+        'small',
+        'medium',
+        'large',
+      ];
+      if (!form.brand.trim() && data.brand) filled.push('brand');
+      setAiFields(new Set(filled));
+      setAiMeta(meta);
+      setErrors({});
+      haptics.success();
+    } catch (error) {
+      const status = getApiErrorStatus(error);
+      if (status === 503) {
+        // No key on the server — stop offering the button this session.
+        setAiUnavailable(true);
+      }
+      haptics.error();
+      showToast(getApiErrorMessage(error, 'Could not estimate nutrition'), 'error');
+    } finally {
+      setAiBusy(false);
+    }
   };
 
   const validate = (): boolean => {
@@ -133,6 +217,7 @@ export default function CreateFoodScreen() {
         fiber: parseFloat(form.fiber) || 0,
         sugar: parseFloat(form.sugar) || 0,
         brand: form.brand.trim() || undefined,
+        description: form.description.trim() || undefined,
         servingSizes: {
           small: parseFloat(form.small),
           medium: parseFloat(form.medium),
@@ -167,6 +252,15 @@ export default function CreateFoodScreen() {
           value={form.brand}
           onChangeText={(v) => set('brand', v)}
           placeholder="e.g. MyProtein"
+          highlighted={aiFields.has('brand')}
+        />
+        <Input
+          label="Description (optional)"
+          value={form.description}
+          onChangeText={(v) => set('description', v)}
+          placeholder="e.g. homemade, full fat, pan fried"
+          hint="Preparation or cut. Also given to the AI fill as context."
+          multiline
         />
         <View>
           <Text style={styles.fieldLabel}>Category</Text>
@@ -182,15 +276,67 @@ export default function CreateFoodScreen() {
             ))}
           </View>
         </View>
+
+        {!aiUnavailable && (
+          <View style={styles.aiBlock}>
+            <PressableScale
+              onPress={handleAiFill}
+              disabled={aiBusy}
+              haptic="none"
+              accessibilityLabel="Fill nutrition values with AI"
+              accessibilityState={{ disabled: aiBusy, busy: aiBusy }}
+              style={[styles.aiButton, aiBusy && styles.aiButtonBusy]}>
+              {aiBusy ? (
+                <ActivityIndicator size="small" color={colors.accent} />
+              ) : (
+                <Sparkles
+                  size={layout.icon.md}
+                  color={colors.accent}
+                  strokeWidth={layout.strokeWidth}
+                />
+              )}
+              <Text style={styles.aiButtonText}>
+                {aiBusy ? 'Estimating…' : 'Fill nutrition with AI'}
+              </Text>
+            </PressableScale>
+            <Text style={styles.aiHint}>
+              Estimates the macros below from the name and description. Always an estimate —
+              check the numbers before saving.
+            </Text>
+          </View>
+        )}
       </Card>
 
       <Card style={styles.section}>
         <Text style={styles.sectionTitle}>Nutrition per 100g</Text>
+
+        {aiMeta && (
+          <Animated.View
+            entering={FadeIn.duration(motion.duration.base)}
+            exiting={FadeOut.duration(motion.duration.fast)}
+            layout={LinearTransition.duration(motion.duration.base)}
+            style={styles.aiBanner}>
+            <View style={styles.aiBannerHeader}>
+              <Sparkles size={layout.icon.sm} color={colors.accent} />
+              <Text style={styles.aiBannerTitle}>
+                AI estimate · {aiMeta.confidence} confidence
+              </Text>
+            </View>
+            {!!aiMeta.note && <Text style={styles.aiBannerBody}>{aiMeta.note}</Text>}
+            {aiMeta.adjustments.length > 0 && (
+              <Text style={styles.aiBannerBody}>
+                Adjusted for consistency: {aiMeta.adjustments.join(', ')}.
+              </Text>
+            )}
+            <Text style={styles.aiBannerBody}>Check the values before saving.</Text>
+          </Animated.View>
+        )}
         <View style={styles.rowPair}>
           <Input
             label="Calories"
             value={form.calories}
             onChangeText={(v) => set('calories', v)}
+            highlighted={aiFields.has('calories')}
             placeholder="250"
             keyboardType="numeric"
             error={errors.calories}
@@ -200,6 +346,7 @@ export default function CreateFoodScreen() {
             label="Protein (g)"
             value={form.protein}
             onChangeText={(v) => set('protein', v)}
+            highlighted={aiFields.has('protein')}
             placeholder="20"
             keyboardType="numeric"
             error={errors.protein}
@@ -211,6 +358,7 @@ export default function CreateFoodScreen() {
             label="Carbs (g)"
             value={form.carbs}
             onChangeText={(v) => set('carbs', v)}
+            highlighted={aiFields.has('carbs')}
             placeholder="30"
             keyboardType="numeric"
             error={errors.carbs}
@@ -220,6 +368,7 @@ export default function CreateFoodScreen() {
             label="Fat (g)"
             value={form.fat}
             onChangeText={(v) => set('fat', v)}
+            highlighted={aiFields.has('fat')}
             placeholder="8"
             keyboardType="numeric"
             error={errors.fat}
@@ -231,6 +380,7 @@ export default function CreateFoodScreen() {
             label="Fiber (g)"
             value={form.fiber}
             onChangeText={(v) => set('fiber', v)}
+            highlighted={aiFields.has('fiber')}
             keyboardType="numeric"
             containerStyle={styles.flexOne}
           />
@@ -238,6 +388,7 @@ export default function CreateFoodScreen() {
             label="Sugar (g)"
             value={form.sugar}
             onChangeText={(v) => set('sugar', v)}
+            highlighted={aiFields.has('sugar')}
             keyboardType="numeric"
             containerStyle={styles.flexOne}
           />
@@ -251,6 +402,7 @@ export default function CreateFoodScreen() {
             label="Small"
             value={form.small}
             onChangeText={(v) => set('small', v)}
+            highlighted={aiFields.has('small')}
             keyboardType="numeric"
             error={errors.small}
             containerStyle={styles.flexOne}
@@ -259,6 +411,7 @@ export default function CreateFoodScreen() {
             label="Medium"
             value={form.medium}
             onChangeText={(v) => set('medium', v)}
+            highlighted={aiFields.has('medium')}
             keyboardType="numeric"
             error={errors.medium}
             containerStyle={styles.flexOne}
@@ -267,6 +420,7 @@ export default function CreateFoodScreen() {
             label="Large"
             value={form.large}
             onChangeText={(v) => set('large', v)}
+            highlighted={aiFields.has('large')}
             keyboardType="numeric"
             error={errors.large}
             containerStyle={styles.flexOne}
@@ -311,5 +465,50 @@ const styles = StyleSheet.create({
   },
   flexOne: {
     flex: 1,
+  },
+  aiBlock: {
+    gap: spacing.sm,
+  },
+  aiButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    minHeight: layout.tapTarget,
+    borderRadius: radius.md,
+    borderWidth: layout.border,
+    borderColor: colors.accentBorder,
+    backgroundColor: colors.accentBg,
+  },
+  aiButtonBusy: {
+    opacity: 0.7,
+  },
+  aiButtonText: {
+    ...typography.bodyStrong,
+    color: colors.accent,
+  },
+  aiHint: {
+    ...typography.caption,
+  },
+  aiBanner: {
+    backgroundColor: colors.accentBg,
+    borderWidth: layout.border,
+    borderColor: colors.accentBorder,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    gap: spacing.xxs,
+  },
+  aiBannerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  aiBannerTitle: {
+    ...typography.captionStrong,
+    color: colors.accent,
+    textTransform: 'capitalize',
+  },
+  aiBannerBody: {
+    ...typography.caption,
   },
 });

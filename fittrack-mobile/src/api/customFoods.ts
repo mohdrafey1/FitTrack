@@ -1,5 +1,6 @@
 import { api } from './client';
 import type {
+  AiSuggestionResult,
   ApiEnvelope,
   CategoryOption,
   CreateCustomFoodPayload,
@@ -26,6 +27,26 @@ export const customFoodsApi = {
   /** Bump usage count so frequently-logged foods sort first. Best-effort. */
   async incrementUsage(id: string): Promise<void> {
     await api.post(`/api/custom-foods/${id}/use`);
+  },
+
+  /**
+   * Ask the server to estimate per-100g nutrition for a food name.
+   *
+   * The Gemini call happens on the backend so the API key never ships inside
+   * the app bundle. Values come back already reconciled against the CustomFood
+   * validation rules, so they can be written straight into the form.
+   *
+   * Throws with status 503 when the server has no AI key configured.
+   */
+  async aiSuggest(name: string, description?: string): Promise<AiSuggestionResult> {
+    const { data } = await api.post<AiSuggestionResult & { success: boolean }>(
+      '/api/custom-foods/ai-suggest',
+      { name, description },
+      // The model call is slower than a database read; the default 15s client
+      // timeout would fire before the server's own 20s ceiling.
+      { timeout: 30000 }
+    );
+    return { data: data.data, meta: data.meta };
   },
 
   async getCategories(): Promise<CategoryOption[]> {

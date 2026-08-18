@@ -110,6 +110,10 @@ export const colors = {
   warningBg: palette.amber100,
   info: palette.blue600,
   infoBg: palette.blue100,
+  /** Soft indigo used to mark AI-generated values. */
+  accent: palette.indigo600,
+  accentBg: palette.indigo50,
+  accentBorder: palette.indigo100,
 
   /** Dark surface used by toasts. */
   inverseSurface: palette.gray800,

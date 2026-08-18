@@ -1,6 +1,12 @@
 const express = require("express");
 const CustomFood = require("../models/CustomFood");
 const { authenticateToken } = require("../middleware/auth");
+const { rateLimitPerUser } = require("../middleware/rateLimit");
+const {
+    suggestNutrition,
+    isConfigured: aiIsConfigured,
+    NutritionAIError,
+} = require("../services/nutritionAI");
 
 const router = express.Router();
 
@@ -95,7 +101,8 @@ router.post("/", authenticateToken, async (req, res) => {
         if (
             !name ||
             !category ||
-            !calories ||
+            calories === undefined ||
+            calories === null ||
             protein === undefined ||
             carbs === undefined ||
             fat === undefined
@@ -320,6 +327,66 @@ router.post("/:id/use", authenticateToken, async (req, res) => {
         });
     }
 });
+
+// @route   POST /api/custom-foods/ai-suggest
+// @desc    Estimate per-100g nutrition for a food name using Gemini
+// @access  Private
+router.post(
+    "/ai-suggest",
+    authenticateToken,
+    rateLimitPerUser({
+        max: 20,
+        windowMs: 60 * 60 * 1000,
+        message: "You have used the AI lookup a lot in the last hour. Try again later or fill the values in yourself.",
+    }),
+    async (req, res) => {
+        try {
+            const { name, description = "" } = req.body;
+
+            if (typeof name !== "string" || name.trim().length < 2) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Enter a food name of at least 2 characters",
+                });
+            }
+
+            if (!aiIsConfigured()) {
+                return res.status(503).json({
+                    success: false,
+                    message: "AI lookup is not enabled on this server",
+                });
+            }
+
+            const suggestion = await suggestNutrition(
+                name.slice(0, 100),
+                typeof description === "string" ? description.slice(0, 300) : ""
+            );
+
+            res.json({
+                success: true,
+                data: suggestion.food,
+                meta: {
+                    model: suggestion.model,
+                    confidence: suggestion.confidence,
+                    note: suggestion.note,
+                    adjustments: suggestion.adjustments,
+                },
+            });
+        } catch (error) {
+            if (error instanceof NutritionAIError) {
+                return res.status(error.status).json({
+                    success: false,
+                    message: error.message,
+                });
+            }
+            console.error("Error suggesting nutrition:", error.message);
+            res.status(500).json({
+                success: false,
+                message: "Server error",
+            });
+        }
+    }
+);
 
 // @route   GET /api/custom-foods/categories/list
 // @desc    Get list of available categories
